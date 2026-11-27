@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>给爸爸的象棋软件 · 技术方案 v2（需求已确认）</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1a1d21;--sub:#5b6470;--line:#e3e6ea;--accent:#c0392b;--ok:#1a7f4b;--warn:#b26a00;--code:#f0f2f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding:20px 14px 60px}
+.wrap{max-width:860px;margin:0 auto}
+header{background:linear-gradient(135deg,#c0392b,#8e2a20);color:#fff;border-radius:14px;padding:24px 22px;margin-bottom:22px}
+header h1{margin:0 0 8px;font-size:24px;letter-spacing:.5px}
+header .meta{font-size:13px;opacity:.9}
+.verdict{background:#fff;border-left:5px solid var(--ok);border-radius:10px;padding:16px 18px;margin-bottom:22px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.verdict b{color:var(--ok)}
+h1,h2,h3,h4{line-height:1.4;margin:30px 0 12px}
+h1{font-size:26px}h2{font-size:21px;padding-bottom:8px;border-bottom:2px solid var(--line)}h3{font-size:18px;color:#2c3138}h4{font-size:16px;color:var(--sub)}
+p{margin:10px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);font-size:14.5px}
+th{background:#eef1f4;text-align:left;padding:11px 12px;font-weight:600;border-bottom:2px solid var(--line);font-size:14px}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:2px 6px;border-radius:4px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+pre{background:#1e232a;color:#e6edf3;padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;color:inherit;padding:0}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border-left:4px solid var(--warn);border-radius:8px;color:#5a4a20}
+blockquote p{margin:4px 0}
+ul,ol{padding-left:22px;margin:10px 0}
+li{margin:5px 0}
+strong{color:#111;font-weight:600}
+a{color:var(--accent)}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0}
+@media(max-width:600px){body{font-size:15px;padding:14px 10px 40px}header h1{font-size:20px}table{font-size:13px}th,td{padding:8px 9px}}
+</style></head><body><div class="wrap">
+<header><h1>给爸爸的象棋软件 · 技术方案 v2（需求已确认）</h1>
+<div class="meta">2026-11-27 ｜ 待拍板，尚未开工 ｜ 网页版 PWA · 复用开源引擎底座</div></header>
+<div class="verdict"><b>结论：</b>做<b>网页版（PWA）</b>，fork 现成开源象棋 AI 底座，自己补三块增量：战绩持久化、复盘反馈、适老化 UI。微信小程序有合规死结，独立 APK 老人装不动。</div>
+<h1>给爸爸的象棋软件 · 技术方案 v2（需求已确认）</h1>
+<blockquote>日期：2026-11-27 ｜ 状态：<strong>需求已确认，待开工</strong><br>变更：v1 是形态选型提案；v2 按你的 4 个答案定稿，新增 6 个你没提但建议做的点子。</blockquote>
+<hr>
+<h2>0. 定稿结论</h2>
+<table><thead><tr><th>项</th><th>结论</th></tr></thead><tbody><tr><td><strong>形态</strong></td><td><strong>网页版 PWA</strong>（安卓，已确认）</td></tr><tr><td><strong>底座</strong></td><td>fork <code>justa-cai/chess</code>（GPL-3.0），白拿规则引擎 + 双引擎 + 六档难度</td></tr><tr><td><strong>我们写</strong></td><td>适老化 UI、战绩存储、复盘反馈引擎、自动难度、<strong>成长感系统</strong></td></tr><tr><td><strong>难度起点</strong></td><td>第 3 档（零下载、秒开），赢了自动升档</td></tr><tr><td><strong>复盘对象</strong></td><td>爸爸看，人话 + 鼓励，每盘只讲 1 步</td></tr><tr><td><strong>战绩用途</strong></td><td>让爸爸有成长感 → <strong>不追求数据全，要追求&quot;看得见的进步&quot;</strong></td></tr></tbody></table>
+<hr>
+<h2>1. 你的 4 个答案如何改变了方案</h2>
+<table><thead><tr><th>你的回答</th><th>对方案的影响</th></tr></thead><tbody><tr><td><strong>安卓手机</strong></td><td>✅ PWA 路线确定。Android 无 iOS 那种 7 天静默清存储规则，战绩本地存较稳。<strong>但</strong>仍保留&quot;导出备份&quot;作为兜底（浏览器清缓存就没了）</td></tr><tr><td><strong>一般爱好者</strong></td><td>难度起点第 3 档（零下载秒开，不卡在 49MB 权重上）。复盘讲战术失误，不讲规则。<strong>不配教学关</strong></td></tr><tr><td><strong>给爸爸看，人话+鼓励</strong></td><td>复盘引擎输出改成&quot;教练点评卡&quot;：<strong>先夸 1 步做对的，再讲 1 步最该改的，最后给 1 个下一盘的建议</strong>。绝不给爸爸看分差/NPS/厘分</td></tr><tr><td><strong>让爸爸有成长感</strong></td><td>⚠️ <strong>这条推翻了我 v1 的一个设计假设。</strong> v1 写&quot;隐藏所有引擎数据&quot;——技术术语该藏，但<strong>进步信号必须露出来</strong>。见 §4 成长感系统</td></tr></tbody></table>
+<h3>4 个答案里最值得说的：成长感 ≠ 隐藏数据</h3>
+<p>v1 我主张&quot;把所有引擎数据折叠进详情页&quot;。这对<strong>技术参数</strong>是对的（深度/节点/NPS 对爸爸无意义），但如果连<strong>进步本身</strong>也藏起来，就没有成长感了。</p>
+<p>正确的切分是：</p>
+<table><thead><tr><th>该藏</th><th>该露</th></tr></thead><tbody><tr><td>深度、节点数、NPS、厘分损失</td><td>连胜几场、难度升到第几档、和上个月比进步了多少</td></tr><tr><td>&quot;score cp -35&quot;</td><td>&quot;这步应该先跳马&quot;</td></tr><tr><td>引擎内部思考过程</td><td>&quot;你上盘这步就对了，这次换了个思路也一样对&quot;</td></tr></tbody></table>
+<p><strong>核心原则：藏术语，露进步。</strong></p>
+<hr>
+<h2>2. 成长感系统（新增，v1 没有）</h2>
+<p>这是&quot;让爸爸有成长感&quot;的技术落地。核心洞察：<strong>成长感 = 有参照系才能被感知</strong>。孤立的胜率数字不产生成长感，只有对比才产生。</p>
+<h3>2.1 三层参照系</h3>
+<pre><code>时间参照          难度参照          瞬间参照
+三个月前 vs 现在   难度在自动升档    和过去的自己对
+      ↓                 ↓                ↓
+底层数据：每一步的引擎评估 + 全部历史棋谱
+（成长感的事实来源，不做任何美化）
+      ↓                 ↓                ↓
+可感知的进步        难度可见          被肯定的瞬间
+和过去的自己下一盘  升档时明确告诉他   复盘先讲他做对的</code></pre>
+<h3>2.2 逐条实现</h3>
+<p><strong>① 时间参照 —— 和过去的自己下一盘</strong></p>
+<p>最有说服力的一条，因为&quot;进步&quot;只有横向对比才成立。</p>
+<p>实现：每局结束存 FEN 全序列 + 该局实际难度参数。三个月后，&quot;挑战三个月前的自己&quot;会取出那盘棋谱，用<strong>当时那个难度档的引擎参数</strong>重新推演。也就是说，三个月前他赢的那盘棋，现在由&quot;过去水平的他&quot;来下。</p>
+<ul><li>他赢了 → 明确提示：&quot;三个月前的你赢不了这盘，你现在赢了。&quot;</li><li>他输了 → 不显示&quot;你输了&quot;，显示&quot;这盘比三个月前难一点，再来&quot;。</li></ul>
+<p>不需要 AI、不需要云，纯本地数据 + 引擎已有参数体系就能实现。<strong>这是我认为最值得做的一条。</strong></p>
+<p><strong>② 难度参照 —— 升档要&quot;可见&quot;</strong></p>
+<p>自动升降档本身不够，必须让爸爸<strong>知道</strong>这件事发生了。</p>
+<ul><li>连续 3 胜 → 弹一次：&quot;你最近赢得多，我给你调难一点了。&quot;（附难度档位变化）</li><li>连续 3 负 → &quot;这档有点难，我给你调简单点。&quot;</li><li>文案必须像朋友说话，不出现&quot;算法调整&quot;&quot;参数&quot;这类词。</li></ul>
+<p><strong>③ 瞬间参照 —— 复盘先讲做对的</strong></p>
+<p>见 §4，复盘引擎的核心设计约束。</p>
+<h3>2.3 进步可视化：用真实数据算，不编</h3>
+<p>需要一个&quot;我的棋力&quot;指标。<strong>不能拍脑袋编一个分</strong>，要基于引擎真实评估来算：</p>
+<ul><li>每局结束时，引擎已经给出双方每步的评估分</li><li>统计他有多少步与引擎首选着一致（命中率）</li><li>用这个命中率 + 胜率 + 当前档位，换算成<strong>中国象棋段位</strong>（1-9 段是中式象棋 culturally 熟悉的刻度，比 Elo 更好懂）</li></ul>
+<p>好处：段位是中国象棋玩家天然懂的单位，&quot;3 段&quot;比&quot;Elo 1450&quot;有感得多。数据来源是引擎真实评估，不是伪造。</p>
+<hr>
+<h2>3. 我建议加的 6 个点子（你原始需求里没有的）</h2>
+<p>按&quot;投入产出比&quot;排序，不是按技术难度。</p>
+<h3>3.1 语音报着法与复盘朗读 ⭐ 强烈建议</h3>
+<p><strong>为什么</strong>：爸爸看&quot;炮二平五&quot;这四个字没问题，但看一整屏复盘文字就费劲。<strong>耳朵比眼睛省力</strong>。</p>
+<p><strong>技术</strong>：Web Speech API 的 <code>speechSynthesis</code>（文字转语音），浏览器原生、离线、零成本。</p>
+<p><strong>实测结论</strong>：</p>
+<ul><li>✅ 安卓 Chrome 完全支持，中文（<code>lang: &#x27;zh-CN&#x27;</code>）正常</li><li>✅ 走子时播报&quot;炮二平五&quot;，复盘时朗读点评</li><li>⚠️ <strong>Android WebView 里可能静默失败</strong>（不报错也不响）——必须做兜底：启动时探测能力，不支持就隐藏语音按钮，并提示&quot;当前设备不支持语音提示&quot;，<strong>其余功能全部照常</strong></li><li>语速建议 0.9x（老人听太快跟不上）</li></ul>
+<p><strong>投入</strong>：小（几十行代码 + 兜底）。<strong>感知强</strong>。</p>
+<h3>3.2 每日一题残局 ⭐ 强烈建议</h3>
+<p><strong>为什么</strong>：这是<strong>唯一能让爸爸主动打开 App 的理由</strong>。跟电脑下棋是&quot;消耗时间&quot;，每日一题是&quot;有收获&quot;。而且残局是真正提升棋力最快的地方。</p>
+<p><strong>技术</strong>：不用外部题库。用引擎自己生成——从棋谱里截取一个&quot;能将军死&quot;的局面，问&quot;红方怎么走能绝杀&quot;。引擎能验证答案对错。</p>
+<p><strong>形式</strong>：每天一题，做完给一句点评。连续做有连续天数（简单计数器）。</p>
+<p><strong>投入</strong>：中。<strong>留存价值最高的一条</strong>。</p>
+<h3>3.3 进步可视化（段位） ⭐ 建议</h3>
+<p>见 §2.3。&quot;我现在是几段&quot;是老人和棋友聊天时最自然的单位。</p>
+<h3>3.4 中断续局不丢棋 ⭐ 建议</h3>
+<p><strong>为什么</strong>：下到一半接个电话、孙子来找他玩，回来发现棋没了——<strong>这种挫败感会直接杀死使用习惯</strong>。</p>
+<p><strong>技术</strong>：每落一子就把 FEN + 走子序列写进 IndexedDB。重新打开时检测到未完成对局，问&quot;上次那局还要继续吗&quot;。</p>
+<p><strong>投入</strong>：小。<strong>防流失的关键细节</strong>。</p>
+<h3>3.5 棋风个性报告 ⭐ 可选</h3>
+<p><strong>为什么</strong>：用他自己的棋谱算出一些有意思的结论，比干巴巴的胜率有温度。</p>
+<p>可算的指标（全部来自真实数据）：</p>
+<ul><li>常用开局（炮二平五 / 飞相局 / 中炮对屏风马）——他最熟悉的套路</li><li>平均每步思考时间（快攻型 vs 稳健型）</li><li>最爱悔棋的位置（有意思）</li><li>一天中哪个时段胜率最高</li></ul>
+<p><strong>投入</strong>：中（数据已有，主要是文案组织）。<strong>分享价值高</strong>——可以生成一张卡片发给棋友。</p>
+<h3>3.6 护眼与久坐提醒 ⭐ 可选</h3>
+<p><strong>为什么</strong>：老人对时间没感觉，一坐一下午。45 分钟提醒一次&quot;起来走两步&quot;，屏幕调暗。</p>
+<p><strong>投入</strong>：极小。</p>
+<hr>
+<h3>3.7 一个我主动砍掉的想法（但你可能想要）</h3>
+<p><strong>&quot;让电脑让一局&quot;</strong>（让子棋）：对提升信心很有用。<strong>但它和&quot;自动升降档&quot;功能重叠</strong>——自动降档已经解决了&quot;打不动&quot;的问题，再加让子就是双重放水，反而让难度体系失真。</p>
+<p><strong>我的默认处理</strong>：不做自动让子，但做成<strong>独立模式</strong>——首屏第三个按钮&quot;今天想赢一把&quot;，点了才用低一档引擎且开局送一子。主动选择，不影响难度体系。</p>
+<p>如果你更想要&quot;每次输了自动让子&quot;，告诉我，这个改起来也不难。</p>
+<hr>
+<h2>4. 复盘反馈引擎（按&quot;给爸爸看&quot;重新设计）</h2>
+<h3>4.1 核心设计约束</h3>
+<table><thead><tr><th>约束</th><th>理由</th></tr></thead><tbody><tr><td><strong>每盘只讲 1 步</strong></td><td>讲 15 个失误 = 一面墙的文字 = 直接关掉。讲 1 步 = 他会记住、会想改</td></tr><tr><td><strong>先夸后批</strong></td><td>先说做对的 1 步，建立&quot;这盘有收获&quot;的感受，再讲 1 步该改的</td></tr><tr><td><strong>绝不出现数字</strong></td><td>不出现 -35厘分、-0.3、NPS。只有&quot;这步应该先跳马&quot;</td></tr><tr><td><strong>结尾给 1 个下一步动作</strong></td><td>&quot;下一盘试试，开局先跳马&quot;——让他有事可做，而不是陷入自我怀疑</td></tr><tr><td><strong>术语全转人话</strong></td><td>&quot;将军&quot;保留（这是象棋的基本词），&quot;双车错&quot;&quot;海底捞月&quot;这类术语要么不用，要么配一句解释</td></tr></tbody></table>
+<h3>4.2 输出样例（这是我要交付的东西，不是设想）</h3>
+<pre><code>┌─────────────────────────────────────┐
+│  这盘你赢了                        │
+│                                     │
+│  👍 第 12 步你跳马过兵              │
+│     这步很主动，把黑方的车堵住了    │
+│                                     │
+│  👉 第 27 步可以更好                │
+│     当时应该炮五进七，你走的炮二平五 │
+│     少了一个子，所以后面很被动      │
+│                                     │
+│  💡 下一盘试试：开局先跳马，别急着出炮│
+│                                     │
+│  再来一局 →                          │
+└─────────────────────────────────────┘</code></pre>
+<h3>4.3 技术实现</h3>
+<p><strong>必须自己写的三块</strong>：</p>
+<ol><li><strong>UCCI → 中文记谱转换器</strong></li></ol>
+<p>   底座<strong>没有</strong>这个函数（我 grep 确认过）。象棋记谱有特殊规则：&quot;炮二平五&quot;（同一列多个炮用&quot;前/后&quot;）、&quot;马8进7&quot;（黑方用阿拉伯数字，红方用汉字）。约 150 行。</p>
+<ol><li><strong>失误定位器</strong></li></ol>
+<p>   引擎已经输出每步的 <code>score cp</code> / <code>score mate</code> 和 MultiPV 候选着法，数据是齐的。</p>
+<ul><li>逐步比较&quot;你实际走的&quot; vs &quot;引擎首选的&quot;</li><li>用 MultiPV 拿到 top-3 候选，如果你的走法不在 top-3 且分差明显 → 标记为失误</li><li>阈值要按难度档分别标定（<strong>低档位不该报太多失误</strong>，否则爸爸一看全是红字就放弃了）</li><li><strong>同时也要识别&quot;你做对了&quot;的步</strong>：你的走法恰好是引擎首选 → 收集起来，作为&quot;👍&quot;素材</li></ul>
+<ol><li><strong>人话点评生成器</strong></li></ol>
+<p>   模板库 + 规则填充。模板按失误类型分：</p>
+<ul><li>漏看吃子 → &quot;这步走过去，{子}就被吃了&quot;</li><li>应将未将 → &quot;这里该将军，你没将，白方缓了一口气&quot;</li><li>贪吃丢子 → &quot;这步能吃，但吃完你的马就守不住了&quot;</li><li>走子顺序问题 → &quot;该先{建议}再{你的走法}&quot;</li></ul>
+<p><strong>为什么不上 LLM</strong>：技术上可以（平台有免密钥 LLM 调用），但每次复盘要联网 + 有 token 成本 + 结果不稳定。<strong>建议先做模板版</strong>（离线、免费、稳定、可预期），跑顺了再考虑把 LLM 作为可选增强。</p>
+<h3>4.4 一个必须注意的技术陷阱</h3>
+<p>底座 CLAUDE.md 明确记录：<strong>发给引擎的必须是 <code>position fen &lt;起始FEN&gt; moves &lt;全部着法&gt;</code>，不能写成 <code>position fen &lt;当前FEN&gt; moves &lt;全部着法&gt;</code></strong>——后者等于在已经走完的局面上再走一遍，等于喂非法着法。</p>
+<p>复盘引擎重走整局时<strong>必须踩准这条</strong>，否则引擎会返回垃圾评估。</p>
+<hr>
+<h2>5. 适老化改造（第一优先级）</h2>
+<p>底座是给开发者看的 UI，我们要给老人用。</p>
+<table><thead><tr><th>维度</th><th>底座原样</th><th>我们改成</th></tr></thead><tbody><tr><td>布局</td><td>桌面横屏，600px 棋盘 + 560px 侧栏</td><td><strong>竖屏单列</strong>，棋盘占满屏宽，引擎数据全折叠进详情页</td></tr><tr><td>配色</td><td>深色科技面板 <code>#20242b</code></td><td><strong>浅色高对比</strong>（老人对深色+小字识别率明显低）</td></tr><tr><td>字号</td><td>桌面级</td><td>正文 ≥ 20px，按钮 ≥ 56px 高</td></tr><tr><td>首屏</td><td>多层嵌套菜单（开始→模式→先手）</td><td><strong>首屏 3 个大按钮</strong>：和电脑下 / 挑战过去的自己 / 我的成绩</td></tr><tr><td>先手</td><td>每次都问</td><td>默认随机（或沿用上次），不打扰</td></tr><tr><td>术语</td><td>深度/节点/NPS/评估分</td><td>全藏进&quot;详情&quot;。主界面只说人话</td></tr><tr><td>着法</td><td><code>h2e2</code></td><td><code>炮二平五</code></td></tr><tr><td>落子反馈</td><td>提示点</td><td>保留 + <strong>触觉震动 + 落子音效</strong></td></tr><tr><td>声音</td><td>无</td><td>走子语音播报（可选，见 §3.1）</td></tr><tr><td>结束语</td><td>&quot;红方胜！&quot;</td><td>&quot;这局你赢了&quot; / &quot;这局电脑赢了，再来一盘&quot;</td></tr><tr><td>失败后</td><td>弹窗</td><td><strong>直接进复盘</strong>，不问他要不要看</td></tr></tbody></table>
+<p><strong>移动端是最大未知数</strong>——底座作者自己标注了&quot;移动端未实测&quot;。风险点在 <code>pikafish-engine.js</code> 里的硬编码假设。<strong>必须在你爸的真机上跑一轮</strong>，模拟器不算。</p>
+<hr>
+<h2>6. 技术架构（定稿）</h2>
+<pre><code>┌───────────────────────────────────────────────┐
+│  适老化 UI（浅色高对比 · 竖屏 · 大字 · 人话）      │
+│  首屏: 和电脑下 / 挑战过去的自己 / 我的成绩        │
+├───────────────────────────────────────────────┤
+│  新增业务模块                                   │
+│  ┌──────────┬──────────┬──────────┬────────┐ │
+│  │ 战绩存储  │ 复盘反馈  │ 成长感    │ 每日一题│ │
+│  │IndexedDB │ 教练点评卡│ 段位/对照│ 残局生成│ │
+│  └──────────┴──────────┴──────────┴────────┘ │
+├───────────────────────────────────────────────┤
+│  PWA 层（新增：底座没有）                        │
+│  manifest.json + sw.js + 图标 + 离线缓存           │
+├───────────────────────────────────────────────┤
+│  引擎桥接层（底座自带，零改动）                    │
+│  bridge.js ─┬─ Wukong JS 57KB（档1-3，零下载）     │
+│             └─ Pikafish WASM + 49MB NNUE（档4-6）│
+├───────────────────────────────────────────────┤
+│  规则层（底座自带）xiangqi.js                    │
+└───────────────────────────────────────────────┘</code></pre>
+<h3>存储设计（IndexedDB，3 个 store）</h3>
+<table><thead><tr><th>Store</th><th>内容</th><th>用途</th></tr></thead><tbody><tr><td><code>games</code></td><td>每局：时间/难度/执子/结果/手数/FEN 序列</td><td>战绩统计、复盘重演</td></tr><tr><td><code>current</code></td><td>当前未完成对局</td><td>中断续局</td></tr><tr><td><code>meta</code></td><td>段位、连胜、连续天数、做过的每日一题</td><td>成长感系统</td></tr></tbody></table>
+<p><strong>导出兜底</strong>：设置里给一个&quot;导出我的战绩&quot;按钮，生成 JSON 文件让爸爸存到微信收藏/发给自己。浏览器清缓存也不怕。</p>
+<hr>
+<h2>7. 实施阶段</h2>
+<table><thead><tr><th>阶段</th><th>内容</th><th>验收标准</th></tr></thead><tbody><tr><td><strong>P0 地基</strong></td><td>fork 底座 → 本地跑通 → 部署</td><td>6 档均可玩，PC 端无 console 报错</td></tr><tr><td><strong>P1 适老化</strong>（最重要）</td><td>竖屏布局、浅色大字、人话文案、中文着法、首屏 3 按钮</td><td><strong>在爸爸真机上</strong>完整走完一局，看得清点得准</td></tr><tr><td><strong>P2 战绩 + PWA</strong></td><td>IndexedDB 3 store、成绩页、manifest+sw、导出</td><td>关浏览器重开数据还在；能添加到主屏幕；断网能玩档 1-3</td></tr><tr><td><strong>P3 复盘引擎</strong></td><td>记谱转换 + 失误定位 + 教练点评卡</td><td>复盘能准确指出&quot;这步该走什么&quot;，语气读起来像鼓励不像批改</td></tr><tr><td><strong>P4 成长感</strong></td><td>段位计算 + 升档可见 + 挑战过去的自己</td><td>能玩&quot;三个月前的自己&quot;，提示语自然</td></tr><tr><td><strong>P5 每日一题 + 打磨</strong></td><td>残局生成、语音播报、久坐提醒、音效</td><td>爸爸连续用 1 周，有主动打开的意愿</td></tr></tbody></table>
+<p><strong>节奏建议</strong>：P0+P1 先做出来给爸爸试用 3-5 天，收他的真实反馈（哪里点不动、看不清、听不懂），再定 P3 复盘的具体话术。<strong>不要一口气做完再给他</strong>——适老化只能靠真实用户迭代出来。</p>
+<hr>
+<h2>8. 风险清单</h2>
+<table><thead><tr><th>#</th><th>风险</th><th>应对</th></tr></thead><tbody><tr><td>1</td><td><strong>底座移动端未实测</strong></td><td>P1 必须在真机验证；准备单线程降级路径</td></tr><tr><td>2</td><td><strong>微信内置浏览器跑不了多线程</strong></td><td>双引擎架构天然支持，自动降级到档 1-3；引导页写明&quot;用浏览器打开，别在微信里直接玩&quot;</td></tr><tr><td>3</td><td><strong>GPL-3.0 传染</strong></td><td>只给爸爸自用 → 无义务。若要公开发布 → 整个项目必须开源</td></tr><tr><td>4</td><td><strong>浏览器清缓存丢战绩</strong></td><td>导出兜底 + localStorage 快照双写</td></tr><tr><td>5</td><td><strong>语音在某些 WebView 静默失败</strong></td><td>启动探测 + 隐藏入口 + 文本照常显示</td></tr><tr><td>6</td><td><strong>底座无 PWA 配置</strong></td><td>P2 自建 manifest.json + sw.js</td></tr><tr><td>7</td><td><strong>复盘阈值没标定</strong></td><td>低档位阈值必须放宽，否则爸爸看到一片红字</td></tr></tbody></table>
+<hr>
+<h2>9. 还差 3 个决定</h2>
+<ol><li><strong>是否公开发布</strong>？（涉 GPL-3.0 传染：只自用没问题；公开/上架则整个项目须开源）</li><li><strong>复盘点评是否接 LLM</strong>？（我的建议：先做模板版，跑顺后再考虑）</li><li><strong>&quot;让一局&quot;要不要</strong>？（我的建议：做成独立模式&quot;今天想赢一把&quot;，不做自动让子）</li></ol>
+<p><strong>部署位置</strong>（GitHub Pages vs WorkBuddy sites）已按实测定：<strong>GitHub Pages</strong>——国内可达已验证（0.68/0.87/1.03s），且底座的 COI 补丁就是为它写的。</p>
+<hr>
+<h2>附：v2 相对 v1 的变更</h2>
+<table><thead><tr><th>变更</th><th>原因</th></tr></thead><tbody><tr><td>形态从&quot;待选&quot;改为&quot;网页版 PWA（安卓）&quot;</td><td>你确认了安卓手机</td></tr><tr><td>新增 §2 成长感系统（三层参照系）</td><td>你说用途是&quot;让爸爸有成长感&quot;——这推翻了 v1&quot;隐藏所有数据&quot;的假设</td></tr><tr><td>复盘输出改为&quot;教练点评卡&quot;</td><td>你说给爸爸看、用人话、鼓励</td></tr><tr><td>难度起点定为第 3 档</td><td>你说爸爸是一般爱好者</td></tr><tr><td>新增 6 个建议点子 + 砍掉 1 个</td><td>你的原始需求未覆盖的部分</td></tr><tr><td>新增 PWA 层（manifest/sw）</td><td>底座没有，且安卓 PWA 需要</td></tr><tr><td>战绩存 3 个 store + 导出兜底</td><td>浏览器清缓存风险</td></tr><tr><td>修复 v1 的疏漏</td><td>v1 说&quot;iOS 7天清除风险&quot;不适用于安卓，但导出兜底仍保留</td></tr></tbody></table>
+</div></body></html>

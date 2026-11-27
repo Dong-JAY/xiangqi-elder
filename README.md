@@ -4,6 +4,19 @@
 
 ---
 
+## 在线访问
+
+| 用途 | 地址 | 说明 |
+|---|---|---|
+| **日常使用**（推荐） | https://xiangqi-elder.app.workbuddy.host/?sharecode=26PF7XBRIW | 线路较快；首次打开要带 query，之后浏览器会自动记住 |
+| **开源镜像** | https://dong-jay.github.io/xiangqi-elder/ | GitHub Pages，纯静态，无需 query |
+| **源码仓库** | https://github.com/Dong-JAY/xiangqi-elder | GPL-3.0，公开 |
+
+> 手机上打开后建议「添加到主屏幕」，之后从桌面图标进入，体验接近原生 App。
+> 请在**浏览器**里打开，不要在微信内置浏览器里玩——引擎需要独立浏览器环境。
+
+---
+
 ## 这是什么
 
 一个纯前端的象棋对弈网页应用。手机上打开链接就能玩，可以「添加到主屏幕」当 App 用。
@@ -95,8 +108,7 @@
 app/
 ├── index.html              页面结构（首屏菜单在棋盘下方独立显示）
 ├── manifest.json           PWA 清单
-├── sw.js                   离线缓存
-├── coi-serviceworker.js    跨源隔离补丁（让多线程 WASM 可用）
+├── sw.js                   Service Worker：跨源隔离头（COOP/COEP）+ 离线缓存
 ├── styles/
 │   ├── main.css            底座样式（深色科技风）
 │   ├── elder.css           适老化主题层（浅色高对比）← 改造核心

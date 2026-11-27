@@ -205,8 +205,9 @@ document.addEventListener('DOMContentLoaded', function () {
     clearStatsTable();
 
     // 高档位依赖 pthread + SharedArrayBuffer，必须在跨源隔离环境里才能跑。
-    // 静态托管下这个环境由 coi-serviceworker.js 提供，而它首次注册后会强制
-    // reload 一次，在那之前选高档位必然失败 —— 提前说清楚，不要让用户干等。
+    // 静态托管下这个环境由 sw.js（Service Worker 注入 COOP/COEP）提供，
+    // 首次访问时会 reload 一次以激活，在那之前选高档位必然失败 ——
+    // 提前说清楚，不要让用户干等。
     if (engineForPlay() === Difficulty.PIKAFISH && !EngineBridge.supportsThreadedWasm()) {
       setStatus('当前环境不支持多线程 WebAssembly，正在准备中。请稍候刷新后重试，或改选 1~3 档。');
       return;

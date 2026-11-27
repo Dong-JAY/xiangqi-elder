@@ -51,6 +51,7 @@
   --elder-tap: 60px;
   --elder-red: #c0392b;
   --elder-black: #1c1a15;
+  --elder-gold: #b08d57;
 }
 
 /* ==========================================================================
@@ -149,6 +150,18 @@ button, .board-option-type-btn {
 }
 
 /* 副标题：改成一句人话 */
+/* 品牌标记「老将」：小字放在大标题上方。
+   大标题必须保留「中国象棋」四个字——那是老人识别"这是什么"的锚点，
+   品牌名放小字位置，不抢功能识别。 */
+#content #content-title .title-brand {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--elder-gold, #b08d57);
+  margin-bottom: 2px;
+  text-indent: 3px;
+}
+
 #content-title .title-sub-badge {
   font-size: 15px !important;
   color: var(--color-text-muted) !important;

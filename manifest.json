@@ -1,7 +1,7 @@
 {
-  "name": "中国象棋 · 和电脑下棋",
+  "name": "老将 · 中国象棋",
   "short_name": "象棋",
-  "description": "给长辈用的中国象棋对弈软件：不用下载，打开就能下，有复盘讲解。",
+  "description": "给家里的老将：无广告的中国象棋。字大、按钮大、只说人话。会记战绩、自动调难度、下完告诉你哪一步该改。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,7 +9,10 @@
   "background_color": "#f2f0e6",
   "theme_color": "#f2f0e6",
   "lang": "zh-CN",
-  "categories": ["games", "entertainment"],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "./icons/icon-192.png",

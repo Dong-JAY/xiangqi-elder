@@ -23,6 +23,7 @@ import pathlib
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 TOKEN = os.environ.get("GH_TOKEN")
@@ -39,6 +40,16 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 SKIP_DIR_NAMES = {".git", "node_modules"}
 LARGE_FILE_LIMIT = 40 * 1024 * 1024
+
+
+def contents_path(rel):
+    """把仓库内相对路径转成 Contents API 的 URL 片段。
+
+    中文文件名必须做 percent-encoding，否则 urllib 在构造请求时
+    会按 ASCII 编码失败（'ascii' codec can't encode characters）。
+    按 / 分段编码，保留路径分隔符本身。
+    """
+    return "/".join(urllib.parse.quote(seg, safe="") for seg in rel.split("/"))
 
 
 def api(method, path, payload=None, timeout=120):
@@ -110,11 +121,11 @@ def put_file(rel, path, remote_sha):
     }
     if remote_sha:
         payload["sha"] = remote_sha
-    api("PUT", f"/repos/{OWNER}/{REPO}/contents/{rel}", payload, timeout=180)
+    api("PUT", f"/repos/{OWNER}/{REPO}/contents/{contents_path(rel)}", payload, timeout=180)
 
 
 def delete_file(rel, remote_sha):
-    api("DELETE", f"/repos/{OWNER}/{REPO}/contents/{rel}",
+    api("DELETE", f"/repos/{OWNER}/{REPO}/contents/{contents_path(rel)}",
         {"message": f"remove {rel}", "sha": remote_sha, "branch": BRANCH})
 
 

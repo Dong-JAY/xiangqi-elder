@@ -257,6 +257,16 @@ async function main() {
   var htmlSrc = readFile('index.html');
   ok(htmlSrc.indexOf('coi-serviceworker') < 0,
      'index.html 不再单独加载 coi-serviceworker（避免双 SW 互相顶掉）');
+
+  /*
+   * 品牌一致性：「老将」是产品名，但首屏大标题必须保留「中国象棋」——
+   * 老人靠这四个字识别"这是什么"，换成品牌名会让他们认不出。
+   * 品牌名只能以小字标记的形式存在。
+   */
+  ok(htmlSrc.indexOf('老将') >= 0, '首屏有品牌标记「老将」');
+  ok(htmlSrc.indexOf('中国象棋</title>') >= 0 || /title[^>]*>老将 · 中国象棋/.test(htmlSrc),
+     '页面标题含「中国象棋」关键词（便于浏览器标签识别）');
+  ok(htmlSrc.indexOf('title-brand') >= 0, '品牌标记使用独立样式类，不占大标题位置');
   // 升级路径：旧 Worker 换新后要自动刷新，否则老用户永远卡在「高档位不可用」
   var regSrc = readFile('js/sw-register.js');
   ok(/updateViaCache:\s*'none'/.test(regSrc),

@@ -257,6 +257,12 @@ async function main() {
   var htmlSrc = readFile('index.html');
   ok(htmlSrc.indexOf('coi-serviceworker') < 0,
      'index.html 不再单独加载 coi-serviceworker（避免双 SW 互相顶掉）');
+  // 升级路径：旧 Worker 换新后要自动刷新，否则老用户永远卡在「高档位不可用」
+  var regSrc = readFile('js/sw-register.js');
+  ok(/updateViaCache:\s*'none'/.test(regSrc),
+     'SW 注册绕过 HTTP 缓存（否则升级要等 10 分钟才生效）');
+  ok(/controllerchange/.test(regSrc) && /!window\.crossOriginIsolated/.test(regSrc),
+     'SW 升级后自动刷新一次，恢复跨源隔离');
 
   // ---------------------------------------------------------------------
   console.log('\n' + '='.repeat(52));

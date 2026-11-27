@@ -4,6 +4,8 @@
 
 [中文](README.md) · [English](README.en.md) · [**在线试玩**](https://dong-jay.github.io/xiangqi-elder/) · GPL-3.0
 
+![老将 · Laojiang：给家里的老将，一个干净的棋盘](docs/assets/cover-landscape.png)
+
 ---
 
 无广告的中国象棋。为不太会用智能手机的长辈设计：字大、按钮大、只说人话。

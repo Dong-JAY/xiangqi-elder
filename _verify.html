@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>verify-loading</title></head>
+<body>
+<pre id="out">checking</pre>
+<script>
+(async function () {
+  var o = { url: location.href };
+  try {
+    o.crossOriginIsolated = window.crossOriginIsolated;
+    o.hasSAB = typeof SharedArrayBuffer === 'function';
+    o.controller = navigator.serviceWorker.controller
+      ? navigator.serviceWorker.controller.scriptURL.replace(location.origin, '') : 'none';
+    var regs = await navigator.serviceWorker.getRegistrations();
+    o.regs = regs.map(function (r) {
+      var w = r.active || r.installing || r.waiting;
+      return w ? w.scriptURL.replace(location.origin, '') : 'pending';
+    });
+    o.caches = await caches.keys();
+  } catch (e) { o.error = String(e); }
+  document.getElementById('out').textContent = JSON.stringify(o);
+  document.title = 'VERIFY:' + JSON.stringify(o);
+})();
+</script>
+</body>
+</html>

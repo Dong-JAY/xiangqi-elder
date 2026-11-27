@@ -126,12 +126,42 @@ app/
 │   └── engines/wukong/     纯 JS 引擎（未改动）
 ├── nnue/                   49MB 神经网络权重（未改动）
 ├── icons/                  PWA 图标
-└── docs/upstream/          底座上游的原始文档（PRD/UI规范/CLAUDE.md）
-
-test/
-├── notation.test.js        中文记谱测试（32 项）
-└── e2e.test.js             适老 UI 端到端测试（47 项）
+├── scripts/
+│   ├── build_wasm.sh       引擎 WASM 构建脚本
+│   └── sync_github.py      走 REST API 的增量同步（git push 失败时的备用通道）
+├── deploy_github.sh        一键建公开仓库 + 推代码 + 开 Pages
+├── test/                   测试（54 项，见下方「开发」）
+└── docs/
+    ├── upstream/           底座上游的原始文档（PRD/UI规范/CLAUDE.md）
+    └── design/             本项目的方案与使用说明
+        ├── 象棋软件方案_v1.md / .html     初版方案（三种形态对比选型）
+        ├── 象棋软件方案_v2.md / .html     落地版方案
+        └── 给爸爸的使用说明.md            给长辈看的操作说明
 ```
+
+---
+
+## 文档与运维脚本
+
+| 文件 | 用途 |
+|---|---|
+| `docs/design/象棋软件方案_v1.md` | 形态选型：微信小程序 / APK / 网页版 三方案对比与推荐依据 |
+| `docs/design/象棋软件方案_v2.md` | 落地实施方案（含适老化设计与技术决策） |
+| `docs/design/给爸爸的使用说明.md` | 给长辈的图文操作说明 |
+| `deploy_github.sh` | 一键部署：建公开仓库 → 推 main → 开 Pages。目录结构自适应，在仓库里或开发工作区都能跑 |
+| `scripts/sync_github.py` | 备用同步通道：按 blob 哈希增量 PUT/DELETE。当 `git push` 因网络或大包问题失败时用它 |
+
+```bash
+# 首次部署（需要一个勾了 repo 权限的 token）
+GH_TOKEN=ghp_xxx ./deploy_github.sh
+
+# 日常增量同步（git push 不通时）
+GH_TOKEN=ghp_xxx python scripts/sync_github.py
+```
+
+> 注意：超过 40MB 的文件（`nnue/*.nnue`）Contents API 传不了，
+> 首次入库请用 `git clone` + `git push`，脚本会跳过它并保持远端原样。
+
 
 ---
 
@@ -139,15 +169,22 @@ test/
 
 ```bash
 # 本地起服务（必须走 HTTP，file:// 拿不到跨源隔离环境）
-cd app && python server.py
+python server.py
 # 打开 http://127.0.0.1:6324/
 
-# 跑测试
-cd test && npm install && npm test
+# 跑测试（首次需要装 jsdom）
+cd test && npm install
+cd .. && bash test/run_tests.sh
 ```
 
-**改代码后注意**：静态资源都带 `?v2` 版本参数。改完记得把版本号往上加一位
-（`index.html` 与 `styles/main.css`），否则浏览器可能还在用旧缓存。
+**改代码后注意**：静态资源都带 `?v4` 版本参数。改完记得把版本号往上加一位
+（`index.html`），否则浏览器可能还在用旧缓存。
+
+**动 Service Worker 前必读**：`sw.js` 同时负责跨源隔离（COOP/COEP）和离线缓存，
+两者必须在**同一个** Worker 里——浏览器同一 scope 只能有一个 active Service Worker，
+拆成两个会互相顶掉，症状是 `crossOriginIsolated` 变 false、4~6 档引擎不可用。
+另外 `activate` 里清理缓存只能删 `xiangqi-elder-*` 前缀，
+删到 `pikafish-nnue-v1` 会让用户重下 49MB。这两点都有测试守着（见 `test/e2e.test.js` 第 8 节）。
 
 ---
 

@@ -96,11 +96,13 @@
 - `js/engines/bridge.js` — 引擎可插拔抽象层
 - `js/engines/wukong/wukong.worker.js` — Wukong 引擎的 Worker 包装
 - `js/worker/pikafish.worker.js` — Pikafish 引擎的 Worker 包装（含权重缓存与进度上报）
-- `coi-serviceworker.js` — 为静态托管注入 COOP/COEP 响应头
+- `sw.js` — Service Worker：跨源隔离头注入（COOP/COEP）+ 离线缓存
 - `js/app.js`、`index.html`、`styles/**`、`server.py`、`scripts/build_wasm.sh`
 
-> 关于 `coi-serviceworker.js`：它与社区知名的 `gzuidhof/coi-serviceworker` **不共享代码**
-> （那是一份 146 行的通用实现，本文件是 33 行的独立精简实现，仅思路相同），
+> 关于 `sw.js` 里的跨源隔离实现：思路参考社区知名的 `gzuidhof/coi-serviceworker`，
+> 但代码为本项目独立编写（并已与离线缓存合并进同一个 Worker——浏览器同一 scope
+> 下只能有一个 active Service Worker，拆成两个会互相顶掉，导致
+> `crossOriginIsolated` 丢失、`SharedArrayBuffer` 不可用）。
 > 因此不归入第三方署名，按本项目 GPL-3.0 分发。
 
 ---

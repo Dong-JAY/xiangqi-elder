@@ -1,0 +1,12 @@
+{
+  "name": "xiangqi-elder-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "给爸爸的象棋软件 · 适老化 UI 端到端测试",
+  "scripts": {
+    "test": "node e2e.test.js"
+  },
+  "dependencies": {
+    "jsdom": "^31.0.1"
+  }
+}

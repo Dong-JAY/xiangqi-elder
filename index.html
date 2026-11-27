@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>中国象棋 · 和电脑下棋</title>
+    <link rel="icon" href="data:,">
+    <link rel="manifest" href="./manifest.json?v2">
+    <meta name="theme-color" content="#f2f0e6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="象棋">
+    <script src="./coi-serviceworker.js?v2"></script>
+    <link rel="stylesheet" href="./styles/main.css?v2">
+    <link rel="stylesheet" href="./styles/elder.css?v2">
+</head>
+<body>
+    <div id="content">
+        <!-- 顶部：谁执什么，一眼看清 -->
+        <div id="content-title" class="dfr aic jcsb">
+            <div id="black-counter" class="dfr aic jcc title-counter">
+                <span id="black-score" class="title-counter-data">电脑</span>
+            </div>
+
+            <div class="dfc aic jcc">
+                <h1 id="title" class="dfr aic jcc">
+                    <span class="title-red">中</span>
+                    <span class="title-black">国</span>
+                    <span class="title-red">象</span>
+                    <span class="title-black">棋</span>
+                </h1>
+                <div class="title-sub-badge">和电脑下一局</div>
+            </div>
+
+            <div id="red-counter" class="dfr aic jcc title-counter">
+                <span id="red-score" class="title-counter-data">您</span>
+            </div>
+        </div>
+
+        <!-- 棋盘 -->
+        <div id="game-layout">
+            <div id="border-frame" class="dfr aic jcc">
+                <!-- 首屏：几个大按钮，不做多层嵌套菜单 -->
+                <div id="board-container"></div>
+            </div>
+
+            <!-- 引擎技术数据：默认折叠，需要时才看 -->
+            <aside id="ai-panel" class="collapsed">
+                <div id="ai-panel-title">引擎数据</div>
+                <div id="ai-panel-subtitle">深度、节点、耗时等原始数据，仅供了解。</div>
+
+                <div id="ai-controls">
+                    <span id="level-badge">难度：中级</span>
+                </div>
+
+                <div id="engine-progress" class="hide">
+                    <div id="engine-progress-track"><div id="engine-progress-bar"></div></div>
+                    <div id="engine-progress-text">正在准备…</div>
+                </div>
+
+                <div id="ai-table-wrap">
+                    <table id="ai-stats-table">
+                        <thead>
+                            <tr id="ai-stats-header">
+                                <th>#</th><th>方</th><th>来源</th><th>着法</th>
+                                <th>节点</th><th>NPS</th><th>耗时</th><th>分数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-stats-body">
+                            <tr id="ai-stats-empty">
+                                <td colspan="8">等待对局开始。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="ai-current">等待对局开始。</div>
+            </aside>
+        </div>
+
+        <!-- 首屏菜单：从棋盘遮罩里挪出来，做成棋盘下方的独立面板。
+             这样结构上就不存在"菜单盖住棋盘"的问题，
+             老人第一眼看到的是棋盘本身。 -->
+        <div id="board-options" class="dfr aic jcc">
+            <div id="menu" class="board-option-type dfr aic jcc">
+                <div id="menu-content" class="board-option-type-content dfr aic jcc">
+                    <div id="pvebtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>和电脑下棋</h1>
+                    </div>
+                    <div id="elder-pastbtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>挑战过去的自己</h1>
+                    </div>
+                    <div id="elder-scoresbtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>我的成绩</h1>
+                    </div>
+                    <div id="pvpbtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>和家里人下</h1>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 先手选择 -->
+            <div id="menu-mode-pve" class="board-option-type dfr aic jcc hide">
+                <div id="menu-mode-pve-content" class="board-option-type-content dfr aic jcc">
+                    <div id="pfbtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>我先走</h1>
+                    </div>
+                    <div id="efbtn" class="board-option-type-btn dfr aic jcc">
+                        <h1>电脑先走</h1>
+                    </div>
+                </div>
+                <div class="returnbtn board-option-type-btn dfr aic jcc" id="return-to-mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a1 1 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 难度选择：默认第 3 档（零下载、秒开） -->
+            <div id="menu-level" class="board-option-type dfr aic jcc hide">
+                <div id="menu-level-content" class="board-option-type-content dfr aic jcc">
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="1"><h1>入门</h1></div>
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="2"><h1>初级</h1></div>
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="3"><h1>中级</h1></div>
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="4"><h1>高级</h1></div>
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="5"><h1>大师</h1></div>
+                    <div class="board-option-type-btn dfr aic jcc level-btn" data-level="6"><h1>宗师</h1></div>
+                </div>
+                <div id="menu-level-hint">前面三档不用下载，打开就能玩。后面的档位要先下载一个更大的文件。</div>
+                <div class="returnbtn board-option-type-btn dfr aic jcc" id="return-from-level">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a1 1 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部操作条：整块大按钮 -->
+        <div id="elder-actions">
+            <button id="undo-btn" type="button">悔棋</button>
+            <button id="restart-btn" type="button">重新开始</button>
+            <button id="review-btn" type="button" class="primary">看复盘</button>
+        </div>
+
+        <div id="elder-actions-2">
+            <button id="home-btn" type="button">回到首页</button>
+        </div>
+
+        <!-- 状态提示：始终可见，说人话 -->
+        <div id="elder-status">点一下「和电脑下棋」开始</div>
+
+        <!-- 展开引擎数据 -->
+        <button id="elder-detail-toggle" type="button">查看引擎数据</button>
+
+        <!-- 复盘点评卡 -->
+        <div id="elder-review" class="hide"></div>
+
+        <!-- 成绩页 -->
+        <div id="elder-scores" class="hide"></div>
+
+        <!-- 终局弹窗 -->
+        <div id="game-summary" class="hide">
+            <span id="game-summary-text">这局结束了</span>
+            <button id="restartbtn" type="button">再来一局</button>
+            <button id="undobtn" type="button">看看复盘</button>
+        </div>
+
+    </div>
+
+    <script src="./js/difficulty.js?v2"></script>
+    <script src="./js/notation.js?v2"></script>
+    <script src="./js/engines/bridge.js?v2"></script>
+    <script src="./js/xiangqi.js?v2"></script>
+    <script src="./js/xiangqiboard.js?v2"></script>
+    <script src="./js/elder.js?v2"></script>
+    <script src="./js/review.js?v2"></script>
+    <script src="./js/app.js?v2"></script>
+    <script src="./js/sw-register.js?v2"></script>
+</body>
+</html>

@@ -1,0 +1,728 @@
+/**
+ * elder.css - 适老化主题层（覆盖底座的深色科技风）
+ *
+ * 设计目标（给 60+ 用户）：
+ *   1. 浅色高对比：底座是深灰底 + 小字，老人识别率明显下降 → 全部改为浅底深字
+ *   2. 字号放大：正文 ≥ 20px，棋盘棋子 ≥ 22px
+ *   3. 触控目标 ≥ 56px：底部操作条用整块按钮而不是小图标
+ *   4. 竖屏单列：棋盘占满屏宽，引擎数据折叠进「详情」抽屉
+ *   5. 术语隐藏：深度/节点/NPS 等全部收进详情页，主界面只说人话
+ *
+ * 本文件以「覆盖」方式叠加在底座样式之后，不修改底座任何 CSS 文件。
+ * 浅色主题的适配主要靠 CSS 变量覆盖 + 针对具体 id 的覆盖规则。
+ */
+
+/* ==========================================================================
+   1. 主题变量覆盖：浅色高对比
+   ========================================================================== */
+:root {
+  /* 背景与面板 */
+  --color-bg-primary: #f2f0e6;          /* 米黄纸感，比纯白柔和，不刺眼 */
+  --color-panel-bg: #ffffff;
+  --color-panel-border: #d8d2c0;
+  --color-panel-shadow: 0 2px 8px rgba(60, 50, 30, 0.12);
+
+  /* 文字：对比度拉到 12:1 以上 */
+  --color-text-main: #1c1a15;
+  --color-text-muted: #55503f;
+  --color-text-dark: #1c1a15;
+  --color-text-light: #ffffff;
+
+  /* 语义色 */
+  --color-score-positive: #14663c;
+  --color-score-negative: #a8531a;
+  --color-score-neutral: #55503f;
+
+  --color-source-ai: #1f5fa8;
+  --color-source-human: #8a5a00;
+
+  /* 尺寸：棋盘随屏自适应；触控目标放大。
+     注意：#border-frame 的实际宽度 = board-size + 4×border-size，
+     border-size = board-size/60，所以总宽 ≈ board-size × 1.067。
+     92vw 会超出视口，这里取 88vw 留出余量。 */
+  --board-size: min(88vw, 520px);
+  --board-border-size: calc(var(--board-size) / 60);
+  --panel-width: min(560px, calc(100vw - 24px));
+  --radius-card: 14px;
+  --radius-btn: 12px;
+
+  /* 适老化专用 */
+  --elder-font: 20px;
+  --elder-tap: 60px;
+  --elder-red: #c0392b;
+  --elder-black: #1c1a15;
+}
+
+/* ==========================================================================
+   2. 基础排版
+   ========================================================================== */
+html, body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-main);
+  font-size: var(--elder-font);
+  /* 老人常见的手指误触：去掉点击高亮块的闪烁感 */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  padding-top: 12px;
+  padding-bottom: 24px;
+}
+
+/* 所有按钮的最小触控面积 */
+button, .board-option-type-btn {
+  min-height: var(--elder-tap);
+  font-size: 21px !important;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   3. 顶部标题区：去掉花哨的立体徽章，改成朴素高对比
+   ========================================================================== */
+
+/*
+ * #content 是 flex 列容器。底座设了 align-items:center，但子元素宽度
+ * 不一致（标题栏 = board-size，棋盘框 = board-size + 4×border-size），
+ * 居中时按最大宽度对齐，其余子元素就会整体偏移、溢出到视口外。
+ * 改成 stretch + 子元素各自 margin:auto 居中，避免这类错位。
+ */
+#content {
+  align-items: stretch;
+  padding: 0 8px;
+}
+
+#content > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#content #content-title {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin-bottom: 12px;
+}
+
+#content #content-title #title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+#content #content-title #title span {
+  margin: 0 4px;
+}
+
+#content #content-title #title .title-red {
+  color: var(--elder-red);
+  text-shadow: none;
+}
+
+#content #content-title #title .title-black {
+  color: var(--elder-black);
+  text-shadow: none;
+}
+
+#content #content-title .title-counter {
+  width: auto;
+  min-width: 76px;
+  height: 52px;
+  padding: 0 14px;
+  margin: 0 8px;
+  border-radius: 26px;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: none;
+  background: #ffffff;
+  border: 2px solid var(--color-panel-border);
+  color: var(--color-text-main);
+}
+
+#black-counter {
+  background: #ffffff !important;
+  color: var(--elder-black) !important;
+}
+
+#red-counter {
+  background: #ffffff !important;
+  color: var(--elder-red) !important;
+}
+
+/* 副标题：改成一句人话 */
+#content-title .title-sub-badge {
+  font-size: 15px !important;
+  color: var(--color-text-muted) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+/* ==========================================================================
+   4. 棋盘
+   ========================================================================== */
+#game-layout {
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+#border-frame {
+  width: calc(var(--board-size) + var(--board-border-size) * 4);
+  height: calc(var(--board-size) + var(--board-border-size) * 4);
+  background: #d9a86a;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(60, 50, 30, 0.2);
+}
+
+#board-container {
+  width: var(--board-size);
+  height: var(--board-size);
+  background-color: #e8c48d;
+}
+
+/* 棋子放大：底座是 44px/20px 字，手机上偏小 */
+#board-container .xiangqi-piece {
+  width: 88% !important;
+  height: 88% !important;
+  font-size: clamp(18px, 5.2vw, 30px) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28) !important;
+  border-width: 2px !important;
+}
+
+/* 落子提示点放大，老人才看得清 */
+#board-container .move-hint-dot {
+  width: 22% !important;
+  height: 22% !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  box-shadow: 0 0 8px currentColor !important;
+}
+
+/* 楚河汉界字样在手机上会挤，改小并降透明度 */
+#board-container .xiangqi-river-layer {
+  font-size: clamp(13px, 3.6vw, 22px) !important;
+  letter-spacing: 4px !important;
+  color: rgba(100, 60, 20, 0.38) !important;
+}
+
+/* ==========================================================================
+   5. 首屏菜单：浅底大按钮
+   ========================================================================== */
+
+/*
+ * 底座的 #board-options 是 position:absolute; height:100% 的深色遮罩，
+ * 会把棋盘整个盖住。适老结构把它移到了棋盘下方（见 index.html），
+ * 这里改成普通流式面板 —— 结构上就不再存在"菜单盖住棋盘"的可能。
+ */
+#board-options {
+  position: static !important;
+  inset: auto !important;
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  height: auto !important;
+  margin: 14px auto 0;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /*
+   * display 不能加 !important —— 底座的 .hide 用的是 display:none !important，
+   * 如果这里也用 !important 且定义在 .hide 之后，就会把「隐藏菜单面板」这个
+   * 能力给废掉（菜单收起后仍然显示）。所以这里用普通 display，
+   * 由下面 #board-options.hide 显式兜底。
+   */
+  display: block;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: auto;
+  transform: none !important;
+}
+
+/* 菜单面板收起（对局开始后）。必须显式声明，否则被上面的 display 盖掉。 */
+#board-options.hide {
+  display: none !important;
+}
+
+/* 各菜单层：普通块级，按需显示 */
+.board-option-type {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto !important;
+  position: static;
+  padding: 0;
+  background: transparent;
+}
+
+/* #menu 默认可见；其余靠 .hide 控制。
+   注意：#menu 的 display 不能加 !important，否则会盖掉 .hide 的 display:none。 */
+#menu {
+  display: flex;
+}
+
+#menu.hide {
+  display: none !important;
+}
+
+/* 菜单面板本体：一张贴在棋盘下的浅色卡片 */
+.board-option-type-content {
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  padding: 16px;
+  background: #fffdf6;
+  border: 1px solid #d8d2c0;
+  border-radius: 16px;
+  box-shadow: 0 3px 12px rgba(60, 50, 30, 0.14);
+}
+
+.board-option-type-btn {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  min-height: var(--elder-tap);
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 2px solid #b9b2a0;
+  border-radius: var(--radius-btn);
+  color: var(--color-text-main);
+  box-shadow: 0 2px 6px rgba(60, 50, 30, 0.12);
+}
+
+.board-option-type-btn:hover,
+.board-option-type-btn:focus-visible {
+  transform: none;
+  background: #fffdf5;
+  border-color: var(--elder-red);
+  color: var(--elder-red);
+}
+
+.board-option-type-btn h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.returnbtn {
+  background: #ffffff;
+  border: 2px solid #b9b2a0;
+  color: var(--color-text-main);
+  width: 56px;
+  height: 56px;
+}
+
+/* 难度选择：两列大按钮。6 个按钮较高，面板允许滚动 */
+#menu-level .board-option-type-content {
+  max-height: 78vh;
+  overflow-y: auto;
+  max-width: 360px;
+}
+
+#menu-level-content {
+  gap: 12px;
+}
+
+#menu-level-content .level-btn {
+  width: 140px;
+  min-height: 56px;
+  height: auto;
+}
+
+#menu-level-content .level-btn h1 {
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+#menu-level-hint {
+  position: static;
+  width: auto;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+
+/* 返回按钮：浮在面板上方，不遮挡内容 */
+.returnbtn {
+  background: #ffffff;
+  border: 2px solid #b9b2a0;
+  color: var(--color-text-main);
+  width: 56px;
+  height: 56px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: auto;
+  z-index: 5;
+}
+
+/* ==========================================================================
+   6. 底部操作条（新增，替代底座的小按钮侧栏）
+   ========================================================================== */
+#elder-actions {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+#elder-actions button {
+  min-height: var(--elder-tap);
+  padding: 10px 6px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #4a4438;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(60, 50, 30, 0.2);
+  touch-action: manipulation;
+}
+
+#elder-actions button:active {
+  transform: translateY(1px);
+}
+
+#elder-actions button.primary {
+  background: var(--elder-red);
+}
+
+#elder-actions button:disabled {
+  opacity: 0.45;
+}
+
+/* 状态提示条：始终可见，用人话 */
+#elder-status {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-btn);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--color-text-main);
+  text-align: center;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   7. 引擎技术数据面板：默认折叠进「详情」
+   ========================================================================== */
+#ai-panel {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  height: auto;
+  max-height: 420px;
+  background: #ffffff;
+  border: 1px solid var(--color-panel-border);
+  color: var(--color-text-main);
+}
+
+#ai-panel-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+#ai-panel-subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+#ai-controls button {
+  padding: 10px 16px;
+  font-size: 16px;
+  color: #ffffff;
+  background: #4a4438;
+  border: none;
+}
+
+#level-badge {
+  color: #8a5a00;
+  background: #fdf3dd;
+  border: 1px solid #e8cf9a;
+  font-size: 14px;
+}
+
+#ai-stats-table {
+  font-size: 13px;
+}
+
+#ai-stats-table th,
+#ai-stats-table td {
+  border-bottom: 1px solid #ece8dc;
+}
+
+#ai-stats-table th {
+  color: var(--color-text-muted);
+  background: #f4f2ea;
+  font-weight: 600;
+}
+
+#ai-stats-table tbody tr:nth-child(odd) {
+  background: #faf9f4;
+}
+
+#ai-stats-empty td {
+  color: var(--color-text-muted);
+}
+
+#ai-current {
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-panel-border);
+}
+
+#engine-progress {
+  background: #f4f2ea;
+  border-color: var(--color-panel-border);
+}
+
+#engine-progress-track {
+  background: #e2ded0;
+}
+
+#engine-progress-bar {
+  background: linear-gradient(90deg, #4a8fd0, #2b6aa8);
+}
+
+#engine-progress-text {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   8. 终局弹窗：大字、暖色、按钮够大
+   ========================================================================== */
+#game-summary {
+  background: #ffffff;
+  border: 2px solid var(--color-panel-border);
+  box-shadow: 0 8px 28px rgba(60, 50, 30, 0.25);
+  border-radius: 18px;
+  padding: 28px 22px;
+  gap: 16px;
+  max-width: min(92vw, 420px);
+}
+
+#game-summary-text {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-align: center;
+  line-height: 1.5;
+}
+
+#restartbtn,
+#undobtn {
+  padding: 12px 24px;
+  min-height: var(--elder-tap);
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--elder-red);
+  border: none;
+  border-radius: var(--radius-btn);
+  box-shadow: 0 2px 6px rgba(60, 50, 30, 0.2);
+  width: 100%;
+}
+
+#restartbtn:hover { background: #a5301f; }
+
+#undobtn {
+  background: #4a4438;
+}
+
+#undobtn:hover { background: #3b362c; }
+
+/* ==========================================================================
+   9. 底部技术说明：默认收起
+   ========================================================================== */
+#engine-note {
+  margin-top: 16px;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+#engine-note .engine-tech {
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   10. 复盘点评卡（新增）
+   ========================================================================== */
+#elder-review {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin-top: 14px;
+  background: #fffdf6;
+  border: 2px solid #e8cf9a;
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--color-text-main);
+}
+
+#elder-review h2 {
+  font-size: 24px;
+  margin: 0 0 14px;
+  text-align: center;
+  color: var(--elder-red);
+  font-weight: 700;
+}
+
+.review-good {
+  background: #eef7f0;
+  border-left: 6px solid #2e8b57;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.review-bad {
+  background: #fdf2ec;
+  border-left: 6px solid #d2691e;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.review-tip {
+  background: #eef3fb;
+  border-left: 6px solid #3a6ea5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.review-tag {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.review-good .review-tag { color: #1f6b41; }
+.review-bad .review-tag { color: #a8501a; }
+.review-tip .review-tag { color: #2c5480; }
+
+.review-move {
+  font-weight: 700;
+  font-size: 21px;
+}
+
+#elder-review .review-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+#elder-review .review-actions button {
+  min-height: var(--elder-tap);
+  font-size: 19px;
+  font-weight: 700;
+  border-radius: var(--radius-btn);
+  border: none;
+  color: #ffffff;
+  background: var(--elder-red);
+  cursor: pointer;
+}
+
+#elder-review .review-actions button.secondary {
+  background: #4a4438;
+}
+
+/* ==========================================================================
+   11. 详情抽屉（放引擎统计）
+   ========================================================================== */
+#elder-detail-toggle {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin-top: 10px;
+  min-height: 48px;
+  padding: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px dashed #b9b2a0;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+}
+
+#ai-panel.collapsed {
+  display: none;
+}
+
+/* ==========================================================================
+   12. 小屏微调
+   ========================================================================== */
+@media (max-width: 420px) {
+  :root {
+    --board-size: min(84vw, 400px);
+    --elder-font: 19px;
+  }
+
+  #content #content-title #title {
+    font-size: 28px;
+  }
+
+  #elder-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #elder-actions button {
+    font-size: 18px;
+  }
+}
+
+/* 横屏时把操作条放到棋盘右侧 */
+@media (min-width: 900px) and (orientation: landscape) {
+  #game-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+/* 尊重系统的减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   13. 第二行操作条（回到首页）
+   ========================================================================== */
+#elder-actions-2 {
+  width: 100%;
+  max-width: calc(var(--board-size) + var(--board-border-size) * 4);
+  margin: 8px auto 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+#elder-actions-2 button {
+  min-height: 50px;
+  padding: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px dashed #b9b2a0;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+}

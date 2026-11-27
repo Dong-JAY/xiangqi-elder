@@ -343,7 +343,7 @@
   /**
    * Pikafish 走的是 pthread + SharedArrayBuffer 多线程路径，必须在
    * 跨源隔离（crossOriginIsolated）环境下才能构造共享内存。静态托管时这个
-   * 环境由 coi-serviceworker.js 提供，而它首次注册后会强制 reload 一次 ——
+   * 环境由 sw.js 注入 COOP/COEP 提供，首次注册后会 reload 一次 ——
    * 在那之前选高档位必然失败。这里给出可查询的状态，让 UI 能提前禁用并解释原因。
    */
   function supportsThreadedWasm() {

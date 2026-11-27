@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>给爸爸的象棋软件 · 技术方案</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1a1d21;--sub:#5b6470;--line:#e3e6ea;--accent:#c0392b;--ok:#1a7f4b;--warn:#b26a00;--code:#f0f2f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding:20px 14px 60px}
+.wrap{max-width:860px;margin:0 auto}
+header{background:linear-gradient(135deg,#c0392b,#8e2a20);color:#fff;border-radius:14px;padding:24px 22px;margin-bottom:22px}
+header h1{margin:0 0 8px;font-size:24px;letter-spacing:.5px}
+header .meta{font-size:13px;opacity:.9}
+.verdict{background:#fff;border-left:5px solid var(--ok);border-radius:10px;padding:16px 18px;margin-bottom:22px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.verdict b{color:var(--ok)}
+h1,h2,h3,h4{line-height:1.4;margin:30px 0 12px}
+h1{font-size:26px}h2{font-size:21px;padding-bottom:8px;border-bottom:2px solid var(--line)}h3{font-size:18px;color:#2c3138}h4{font-size:16px;color:var(--sub)}
+p{margin:10px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);font-size:14.5px}
+th{background:#eef1f4;text-align:left;padding:11px 12px;font-weight:600;border-bottom:2px solid var(--line);font-size:14px}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+code{background:var(--code);padding:2px 6px;border-radius:4px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+pre{background:#1e232a;color:#e6edf3;padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;color:inherit;padding:0}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border-left:4px solid var(--warn);border-radius:8px;color:#5a4a20}
+blockquote p{margin:4px 0}
+ul,ol{padding-left:22px;margin:10px 0}
+li{margin:5px 0}
+strong{color:#111;font-weight:600}
+a{color:var(--accent)}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0}
+@media(max-width:600px){body{font-size:15px;padding:14px 10px 40px}header h1{font-size:20px}table{font-size:13px}th,td{padding:8px 9px}}
+</style></head><body><div class="wrap">
+<header><h1>给爸爸的象棋软件 · 技术方案</h1>
+<div class="meta">2026-11-27 ｜ 待拍板，尚未开工 ｜ 网页版 PWA · 复用开源引擎底座</div></header>
+<div class="verdict"><b>结论：</b>做<b>网页版（PWA）</b>，fork 现成开源象棋 AI 底座，自己补三块增量：战绩持久化、复盘反馈、适老化 UI。微信小程序有合规死结，独立 APK 老人装不动。</div>
+<h1>给爸爸的象棋软件 · 技术方案</h1>
+<blockquote>日期：2026-11-27 ｜ 状态：<strong>待你拍板，尚未开工</strong><br>一句话结论：<strong>做网页版（PWA），复用现成开源引擎底座，自己补三块增量功能。</strong></blockquote>
+<hr>
+<h2>0. 结论先行</h2>
+<table><thead><tr><th>项目</th><th>结论</th></tr></thead><tbody><tr><td><strong>推荐形态</strong></td><td><strong>网页版（做成 PWA，可&quot;添加到主屏幕&quot;当 App 用）</strong></td></tr><tr><td><strong>技术底座</strong></td><td>fork <code>justa-cai/chess</code>（纯前端象棋 AI，六档难度，双引擎，GPL-3.0）</td></tr><tr><td><strong>我们自己写的增量</strong></td><td>① 战绩持久化 ② 复盘反馈引擎 ③ 适老化 UI 改造</td></tr><tr><td><strong>最大风险</strong></td><td>微信内置浏览器跑不了 Pikafish 多线程 → 必须保留 JS 引擎降级档（底座已自带）</td></tr><tr><td><strong>工作量</strong></td><td>中等。核心难点全在&quot;适老化&quot;和&quot;复盘反馈&quot;，引擎不用自己写</td></tr><tr><td><strong>不推荐</strong></td><td>微信小程序（合规死结）｜ 独立 APK（老人装不动 + 要重装更新）</td></tr></tbody></table>
+<p><strong>什么情况下应该改成 APK：</strong> 如果你爸不会/不愿用手机浏览器打开链接（非浏览器场景），或者你打算把这个软件给很多人装，那就换 APK。技术上 APK 是网页版的薄壳，一周内可从同一份代码包出来。</p>
+<hr>
+<h2>1. 需求还原</h2>
+<p>你提的四条硬需求 + 一条隐含需求：</p>
+<table><thead><tr><th>#</th><th>需求</th><th>拆解</th></tr></thead><tbody><tr><td>1</td><td>没有广告</td><td>✅ 全部自研实现，无第三方广告 SDK，天然满足</td></tr><tr><td>2</td><td>记录战绩</td><td>局级记录（日期/难度/执子/结果/手数）+ 统计（胜率/连胜/当前档位）+ 导出分享</td></tr><tr><td>3</td><td>难度提升</td><td>⚠️ <strong>不该让老人手动选 6 档</strong>。应该做成自动升降档（连胜升、连败降）+ 手动锁定兜底</td></tr><tr><td>4</td><td>复盘反馈</td><td>引擎重走整局 → 定位关键失误步 → 用中文说人话（&quot;这步该炮五进七&quot;）</td></tr><tr><td>5</td><td><em>隐含：给爸爸用</em></td><td><strong>这才是真正的设计主线</strong>。见 §4.1</td></tr></tbody></table>
+<blockquote><strong>需求 3 的重新定义</strong>：参考项目是&quot;6 档手动选&quot;，但对 60+ 老人，&quot;我该选第几档&quot;是个认知负担。正确的做法是系统按他的表现自动调——连赢 3 局升档、连输 2 局降档，并在升档时用一句话告诉他&quot;你最近赢得多，给你加难度了&quot;。手动选择保留在设置里作为兜底。</blockquote>
+<hr>
+<h2>2. 三种形态的可行性裁决（全部实测，非推测）</h2>
+<h3>2.1 微信小程序 —— ❌ 不推荐，两个独立的阻断点</h3>
+<table><thead><tr><th>阻断点</th><th>实测/查证结论</th></tr></thead><tbody><tr><td><strong>SharedArrayBuffer 不可用</strong></td><td>微信小程序沙箱无法下发 <code>COOP</code>/<code>COEP</code> 响应头，微信也未开放该配置入口 → <code>SharedArrayBuffer is not defined</code> → <strong>Pikafish 多线程 WASM 直接跑不起来</strong>。依据：CSDN 技术问答 + libpag 官方微信构建指南（明确写&quot;微信运行时不支持 SharedArrayBuffer，因此必须单独构建单线程 WASM&quot;）</td></tr><tr><td><strong>棋牌类目要版号</strong></td><td>微信小游戏审核指引：棋牌类目需额外提交《网络游戏出版物号核发单》《产品合规报告》《产品运营报告》。个人主体<strong>无法申请棋牌类目</strong>。走普通小程序账号虽可注册，但一个完整对弈游戏被判定为棋牌类目、被要求补版号的概率很高</td></tr><tr><td><strong>包体积</strong></td><td>主包 ≤2MB、总包 ≤20MB。49MB 的 NNUE 权重进不了包（需运行时下载落到小程序文件系统，链路更脆）</td></tr><tr><td><strong>平台工具链不支持</strong></td><td>WorkBuddy <code>sites</code> 技能明确拒绝发布小程序（预检直接报错），只能回微信开发者工具手工上传审核发布</td></tr></tbody></table>
+<h3>2.2 独立 APK —— ⚠️ 可行，但性价比低</h3>
+<table><thead><tr><th>维度</th><th>评估</th></tr></thead><tbody><tr><td>技术可行性</td><td>✅ WebView 壳加载同一份网页代码，跨源隔离可用 <code>androidx.webkit</code> 处理</td></tr><tr><td>本机工具链</td><td>❌ <strong>当前完全没有</strong>：JDK 未装、Android SDK 未装、Gradle 未装、<code>ANDROID_HOME</code> 未设。需下载 JDK 186MB + cmdline-tools 153MB + platform/build-tools（国内镜像可达但要配 proxy）</td></tr><tr><td>分发门槛</td><td>⚠️ 给老人装 APK 要开&quot;允许未知来源&quot;，每次更新还要重装一遍</td></tr><tr><td>应用市场</td><td>要软著 + 备案，个人走完全流程周期长</td></tr></tbody></table>
+<h3>2.3 网页版 —— ✅ 推荐</h3>
+<table><thead><tr><th>维度</th><th>评估</th></tr></thead><tbody><tr><td>技术可行性</td><td>✅ 纯静态，零构建，服务器零成本</td></tr><tr><td><strong>国内可达性</strong></td><td>✅ <strong>本机实测</strong>：<code>justa-cai.github.io</code> 连测 3 次，总耗时 0.68s / 0.87s / 1.03s，<code>wukong.js</code>（58KB）与 NNUE 权重（206 分片响应）全部 200</td></tr><tr><td>老人上手</td><td>✅ 微信里点链接 → 浏览器打开 → &quot;添加到主屏幕&quot; → 桌面有图标，以后一点就开（只需做一次）</td></tr><tr><td>更新</td><td>✅ 改完刷新即生效，不用让老人重装</td></tr><tr><td>无广告</td><td>✅ 自己写的，没有广告位</td></tr><tr><td>战绩存储</td><td>✅ IndexedDB 本地存，零成本零依赖</td></tr></tbody></table>
+<hr>
+<h2>3. 参考项目拆解：我们白拿什么，自己写什么</h2>
+<p>底座选 <strong><code>justa-cai/chess</code></strong>（GitHub，GPL-3.0，2026-09 仍活跃）。它已经是一个跑通的纯前端象棋 AI，我完整读了源码，结论如下。</p>
+<h3>3.1 直接白拿（不重写）</h3>
+<table><thead><tr><th>能力</th><th>位置</th><th>说明</th></tr></thead><tbody><tr><td>完整规则引擎</td><td><code>js/xiangqi.js</code></td><td>白脸将、自杀着、蹩马腿、塞象眼、炮翻山、九宫限制，终局判定（无子可走即判负）</td></tr><tr><td>双引擎桥接</td><td><code>js/engines/bridge.js</code></td><td>Worker 型 WASM 引擎与同线程 JS 引擎收敛成同一套异步接口</td></tr><tr><td>低档引擎</td><td><code>js/engines/wukong/</code></td><td>纯 JS，57KB，零下载，MIT 许可</td></tr><tr><td>高档引擎</td><td><code>js/worker/pikafish-engine.wasm</code></td><td>Pikafish（C++→WASM）+ NNUE 权重，GPL-3.0</td></tr><tr><td><strong>六档难度表</strong></td><td><code>js/difficulty.js</code></td><td>已实测标定：档 1-3 用 Wukong 靠&quot;随机失误率&quot;调弱（加深度不涨棋，是实测结论），档 4-6 用 Pikafish 的 MultiPV + softmax 温度采样调弱</td></tr><tr><td>跨源隔离补丁</td><td><code>coi-serviceworker.js</code></td><td>给 GitHub Pages 补 COOP/COEP 头，绕过&quot;静态托管无法自定义响应头&quot;的限制</td></tr><tr><td>缓存策略</td><td>三层查找</td><td>内存 → Cache Storage → 网络，49MB 权重只下一次</td></tr></tbody></table>
+<blockquote>难度调参是这块底座最有价值的部分。原作者已做过机机对战标定（L3:L4 = 0:18 等），我们直接继承，省掉最耗时的调参环节。</blockquote>
+<h3>3.2 必须我们自己写的（这是真正的增量）</h3>
+<table><thead><tr><th>#</th><th>模块</th><th>难度</th><th>说明</th></tr></thead><tbody><tr><td>A</td><td><strong>适老化 UI 改造</strong></td><td>★★★</td><td>见 §4.1。原 UI 是深色科技风面板 + 小字 + 侧栏，对老人不友好；且原项目明确写着&quot;移动端未实测&quot;</td></tr><tr><td>B</td><td><strong>战绩持久化 + 统计</strong></td><td>★★</td><td>IndexedDB 存局记录，胜率/连胜/当前档位统计，导出为图片或文本</td></tr><tr><td>C</td><td><strong>复盘反馈引擎</strong></td><td>★★★</td><td>见 §4.4。需要新写 UCCI→中文记谱的转换（原项目<strong>没有</strong>这个函数，我 grep 确认过）</td></tr><tr><td>D</td><td><strong>自动升降档</strong></td><td>★★</td><td>基于战绩表现驱动难度</td></tr><tr><td>E</td><td><strong>中文着法显示</strong></td><td>★★</td><td>原项目侧栏显示的是 <code>h2e2</code> 这种坐标，必须换成&quot;炮二平五&quot;</td></tr></tbody></table>
+<h3>3.3 ⚠️ 许可证提醒（重要，别踩坑）</h3>
+<ul><li><strong>Pikafish 是 GPL-3.0</strong>，编译成 WASM 后随项目分发，<strong>传染性覆盖整个前端产物</strong>。</li><li><strong>只给爸爸自用 → 不构成&quot;分发&quot;→ GPL 义务不触发，完全没问题。</strong></li><li>但如果你以后想<strong>公开发布这个软件</strong>（挂应用市场、分享给朋友群），<strong>必须开源整个项目</strong>。这个决定要在动手前想清楚。</li><li>另有一个坑：底座仓库的 NNUE 权重是 51MB 的二进制文件。如果做 APK，包体会到 55MB+（微信/应用商店对小程序和 APK 都有体积限制，但 APK 无硬限制）。</li></ul>
+<hr>
+<h2>4. 推荐方案详细设计</h2>
+<h3>4.1 适老化改造（第一优先级，这是&quot;给爸爸用&quot;的落点）</h3>
+<p>原项目是给开发者看的，我们要做给老人用：</p>
+<table><thead><tr><th>维度</th><th>原项目</th><th>我们改成</th></tr></thead><tbody><tr><td>布局</td><td>桌面横屏，600px 棋盘 + 560px 侧栏</td><td><strong>竖屏单列</strong>：棋盘占满屏幕宽度，引擎数据折叠进&quot;详情&quot;页</td></tr><tr><td>配色</td><td>深色科技面板（<code>#20242b</code>）</td><td><strong>浅色高对比</strong>，字号 ≥ 20px，按钮 ≥ 56px 高</td></tr><tr><td>主操作</td><td>多层嵌套菜单（开始→模式→先手）</td><td><strong>首屏两个大按钮</strong>：「和电脑下」「看我的战绩」。先手默认随机或上次选择，不问他</td></tr><tr><td>术语</td><td>深度/节点/NPS/UCCI 评估分</td><td>全部隐藏进&quot;高级信息&quot;。主界面只说人话：「电脑想了 2 秒」「这步走得不错」</td></tr><tr><td>落子反馈</td><td>提示点</td><td>保留，并加<strong>触觉+音效</strong>确认；可选&quot;允许悔棋&quot;开关</td></tr><tr><td>着法显示</td><td><code>h2e2</code></td><td><code>炮二平五</code></td></tr><tr><td>失败处理</td><td>弹窗</td><td>弹窗用大字，措辞口语化，<strong>不出现&quot;GG&quot;</strong></td></tr></tbody></table>
+<p><strong>移动端是最大的未知数</strong>（原项目自己标注了&quot;移动端未实测&quot;），风险点是 <code>pikafish-engine.js</code> 里的硬编码假设。这必须列为 P1 阶段的实测项——在你爸的真机上跑一轮，而不是模拟器。</p>
+<h3>4.2 架构（沿用底座 + 三块新增）</h3>
+<pre><code>┌──────────────────────────────────────────────┐
+│  适老化 UI 层（新增改造）                       │
+│  竖屏单列 · 大字号 · 人话反馈 · 中文着法          │
+├──────────────────────────────────────────────┤
+│  新增业务模块                                    │
+│  ┌────────────┬────────────┬────────────┐   │
+│  │ 战绩存储    │ 复盘反馈    │ 自动升降档  │   │
+│  │ IndexedDB  │ 复盘引擎    │ 难度策略器  │   │
+│  └────────────┴────────────┴────────────┘   │
+├──────────────────────────────────────────────┤
+│  引擎桥接层（底座自带）                          │
+│  bridge.js ─┬─ Wukong JS (57KB, 零下载)        │
+│             └─ Pikafish WASM (49MB NNUE)      │
+├──────────────────────────────────────────────┤
+│  规则层（底座自带）xiangqi.js 完整规则           │
+└──────────────────────────────────────────────┘</code></pre>
+<h3>4.3 战绩记录</h3>
+<p><strong>存什么</strong>（每局一行）：日期时间、难度档、执红/黑、结果（胜/负/和）、总手数、每手着法（FEN 序列，用于复盘）、时长。</p>
+<p><strong>怎么呈现</strong>：</p>
+<ul><li>「我的战绩」页：总胜率、当前连胜/连败、当前档位、近 20 局战绩条形图</li><li>「复盘」入口：从最近一局进复盘，或从历史列表选任一局</li><li><strong>导出</strong>：一键生成一张战绩卡片图片（可直接微信发给家人），或导出文本</li></ul>
+<p><strong>存哪</strong>：IndexedDB（本地）。不联网上传——老人的棋谱没有分享价值，隐私上也不该外传。<strong>这也意味着换手机会丢战绩</strong>，这是个取舍；如果后面要做多设备同步再上云服务。</p>
+<h3>4.4 复盘反馈引擎（最有价值，也最需要设计）</h3>
+<p><strong>原理</strong>：对局结束后，让引擎把整局&quot;重走&quot;一遍，逐步比较<strong>你实际走的</strong> vs <strong>引擎认为最优的</strong>，用分差损失（厘分）定位关键失误。</p>
+<p>引擎已经能输出 <code>score cp</code> / <code>score mate</code> 和 MultiPV 候选着法，数据是齐的。我们需要新写的：</p>
+<ol><li><strong>UCCI → 中文记谱转换器</strong>（底座没有）：<code>h2e2</code> → <code>炮二平五</code>。象棋记谱有&quot;炮二平五&quot;&quot;马8进7&quot;的特殊写法（同一列多个子用&quot;前/后&quot;），要按标准规则实现。</li><li><strong>损失计算器</strong>：每步对比 top-1 与实际走法后的评估分，差值超阈值即标记为失误。阈值要按档位分别标定（低档位不该报太多失误，否则老人一看全是红字就放弃了）。</li><li><strong>关键节点识别</strong>：吃子、将军、漏防、被将军未应——这些是老人最容易犯且最值得讲的错误。</li><li><strong>人话点评生成</strong>：用模板库 + 规则填充。例如：</li></ol>
+<blockquote><strong>第 23 步</strong>（你走：马8进7）<br>引擎推荐：<strong>炮5进7</strong>（可绝杀）<br>这步之后你的马被白车吃掉，白方下一手将军就赢了。</blockquote>
+<p><strong>为什么不上 LLM 生成点评</strong>：技术上可以（平台有免密 LLM 调用），但每次复盘都要联网 + 有 token 成本 + 结果不稳定。<strong>建议先做模板版</strong>（离线、免费、稳定、可预期），跑顺了再考虑把 LLM 作为可选增强。</p>
+<p><strong>复盘是&quot;慢思考&quot;场景</strong>——爸爸下完一局愿意花几分钟看，这正是学棋的关键窗口。别做成要点的按钮，要做成他愿意主动打开的&quot;看点&quot;。</p>
+<h3>4.5 部署与分发</h3>
+<table><thead><tr><th>项</th><th>方案</th></tr></thead><tbody><tr><td>托管</td><td><strong>GitHub Pages</strong>（底座作者已用 <code>coi-serviceworker.js</code> 解决跨源隔离，且我实测国内可达）。备选：WorkBuddy <code>sites</code> 部署单端口 Python 服务（自加 COOP/COEP 头）</td></tr><tr><td>分发</td><td>把链接发给爸爸（微信直接发）。<strong>首次引导</strong>：微信打开 → 右上角菜单 →「在浏览器中打开」→「添加到主屏幕」</td></tr><tr><td>更新</td><td>改完推送即生效</td></tr><tr><td><strong>关键提示</strong></td><td>在<strong>系统浏览器</strong>（Chrome/夸克/小米自带浏览器）里打开可启用全部 6 档；在<strong>微信内置浏览器</strong>里打开，Pikafish 多线程可能不可用 → <strong>自动降级到 Wukong JS 引擎的 1-3 档</strong>（底座双引擎架构天然支持，这是刚需不是过度设计）</td></tr></tbody></table>
+<blockquote>建议在&quot;添加到主屏幕&quot;的引导页里明确写一句：&quot;<strong>记得用浏览器打开，不要在微信里直接玩</strong>，否则电脑水平会低一些。&quot;</blockquote>
+<hr>
+<h2>5. 实施阶段</h2>
+<table><thead><tr><th>阶段</th><th>内容</th><th>验收标准</th><th>风险</th></tr></thead><tbody><tr><td><strong>P0 地基</strong></td><td>fork 底座 → 本地跑通 → 部署 GitHub Pages</td><td>6 档难度均可玩，PC 端无 console 报错</td><td>低</td></tr><tr><td><strong>P1 适老化</strong>（最重要）</td><td>竖屏布局、大字号、人话文案、中文着法、成绩页</td><td><strong>在爸爸的真机上</strong>完整走完一局，字看得清、点得准</td><td>中（移动端未实测）</td></tr><tr><td><strong>P2 战绩</strong></td><td>IndexedDB 存储 + 统计页 + 导出</td><td>关掉浏览器重开，战绩还在</td><td>低</td></tr><tr><td><strong>P3 复盘</strong></td><td>记谱转换 + 损失计算 + 点评生成</td><td>复盘能准确指出&quot;这步该走什么&quot;，人话读得懂</td><td>中高（需反复标定阈值）</td></tr><tr><td><strong>P4 自动难度</strong></td><td>连胜升档 / 连败降档 + 提示</td><td>连续 3 胜自动升档，提示文案友好</td><td>低</td></tr><tr><td><strong>P5 打磨</strong></td><td>音效、触觉、对比度、无障碍</td><td>老人独立使用 1 周无求助</td><td>低</td></tr></tbody></table>
+<p><strong>建议节奏</strong>：P0+P1 先做出来给爸爸试用 3-5 天，收集他的真实反馈（哪里点不动、看不清、听不懂），再决定 P3 复盘的具体形态。<strong>不要一口气做完所有功能再给他</strong>——适老化只能靠真实用户迭代出来。</p>
+<hr>
+<h2>6. 需要你拍板的 5 件事</h2>
+<ol><li><strong>形态</strong>：网页版（PWA）先行，还是你决定直接上 APK？</li><li><strong>能不能公开发布</strong>：只给爸爸自用（GPL 无义务），还是想开源/上架（须整个项目开源）？</li><li><strong>战绩要不要跨设备</strong>：本地存最简单；跨设备要引入账号体系 + 云服务（成本和复杂度上一个台阶）</li><li><strong>复盘点评要不要上 AI</strong>：模板版（离线免费）还是接 LLM（更聪明但联网 + 有成本）</li><li><strong>部署位置</strong>：GitHub Pages（省事，实测可达）vs WorkBuddy <code>sites</code>（平台内托管，更可控）</li></ol>
+<hr>
+<h2>附：本次核实清单（可复核）</h2>
+<table><thead><tr><th>结论</th><th>核实方式</th><th>结果</th></tr></thead><tbody><tr><td>GitHub/npm 国内连通</td><td>curl 实测</td><td>github.com 200、npm 200、npmmirror 200</td></tr><tr><td>GitHub Pages 国内速度</td><td>连续 3 次计时</td><td>0.68 / 0.87 / 1.03 秒</td></tr><tr><td>NNUE 权重可达</td><td>Range 请求</td><td>206 正常</td></tr><tr><td>本机 Android 工具链</td><td>which/ls 检查</td><td>JDK、SDK、Gradle <strong>全部缺失</strong></td></tr><tr><td>国内镜像可达性</td><td>curl HEAD</td><td>华为云 JDK、清华 TUNA、dl.google.com 均 200</td></tr><tr><td>小程序 SharedArrayBuffer</td><td>官方文档 + 技术问答</td><td>不支持，已确认</td></tr><tr><td>棋牌版号要求</td><td>小游戏审核指引</td><td>棋牌类目需出版物号，个人主体不可申请</td></tr><tr><td>小程序包体积</td><td>官方文档</td><td>主包 2MB / 总包 20MB</td></tr><tr><td><code>sites</code> 发布小程序</td><td>平台技能预检说明</td><td>明确不支持</td></tr><tr><td>底座无中文记谱函数</td><td>grep 源码</td><td>确认缺失，需新写</td></tr><tr><td>底座移动端未实测</td><td>读 CLAUDE.md</td><td>原作者自己标注</td></tr><tr><td>云服务当前状态</td><td>inspect</td><td>未开通（本方案默认不需要）</td></tr></tbody></table>
+</div></body></html>

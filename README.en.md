@@ -4,6 +4,8 @@
 
 [中文](README.md) · [English](README.en.md) · [**Play it now**](https://dong-jay.github.io/xiangqi-elder/) · GPL-3.0
 
+![Laojiang — a clean chessboard for the veteran of the family](docs/assets/cover-landscape.png)
+
 ---
 
 An ad-free Xiangqi (Chinese Chess) app designed for people who are not good with smartphones.

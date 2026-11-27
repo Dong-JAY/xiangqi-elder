@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老将 · 社区提交助手</title>
+<style>
+  :root {
+    --bg: #f2f0e6;
+    --card: #fffdf7;
+    --ink: #2b2824;
+    --sub: #7a7268;
+    --red: #b03a2e;
+    --gold: #b08d57;
+    --line: #e2ddd0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 18px 60px;
+    background: var(--bg); color: var(--ink);
+    font-family: "Microsoft YaHei", -apple-system, system-ui, sans-serif;
+    font-size: 17px; line-height: 1.65;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: 1px; }
+  .brand { font-size: 13px; color: var(--gold); letter-spacing: 3px; margin-bottom: 2px; }
+  .lead { color: var(--sub); font-size: 15px; margin: 0 0 24px; }
+  .step {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+  }
+  .step-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .num {
+    flex: 0 0 26px; height: 26px; border-radius: 50%;
+    background: var(--red); color: #fff; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .label { font-weight: 700; font-size: 16px; }
+  .hint { color: var(--sub); font-size: 14px; margin: 6px 0 10px; }
+  .field {
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; font-size: 16px; white-space: pre-wrap;
+    word-break: break-word; max-height: 240px; overflow-y: auto;
+    font-family: inherit; line-height: 1.7;
+  }
+  .field.mono { font-family: ui-monospace, Consolas, monospace; font-size: 14px; }
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .row .field { flex: 1; min-width: 0; }
+  button {
+    flex: 0 0 auto; min-height: 48px; padding: 0 20px;
+    border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink);
+    font-size: 15px; font-family: inherit; cursor: pointer;
+  }
+  button:active { background: #f0ece0; }
+  button.done { background: #e8f3ec; border-color: #a8ccb4; color: #1e6b3a; }
+  .count { font-size: 13px; color: var(--sub); margin-top: 6px; }
+  .cover { width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  .warn {
+    background: #fdf3e7; border: 1px solid #e8cfa8; border-radius: 10px;
+    padding: 12px 14px; font-size: 15px; color: #7a4f16; margin-bottom: 22px;
+  }
+  .links a { color: var(--red); }
+  code { background: #f0ece0; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+  .foot { color: var(--sub); font-size: 14px; margin-top: 26px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">老将 · LAOJIANG</div>
+  <h1>WorkBuddy 社区提交助手</h1>
+  <p class="lead">每一步左边是要填的内容，点右侧按钮复制，粘到对应输入框。全部照抄即可，不用改写。</p>
+
+  <div class="warn">
+    <strong>提交这一步需要你的账号登录。</strong>
+    社区接口返回「请先登录后再操作」——登录态属于你本人身份，我没有代替你登入，也不会绕过。
+    所以这里做到「只剩复制粘贴」为止。
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">1</div><div class="label">封面图</div></div>
+    <p class="hint">在提交页上传这张图（右键另存 / 直接从文件夹拖入）：</p>
+    <img class="cover" src="../assets/cover-landscape.png" alt="老将封面图">
+    <p class="hint" style="margin-top:10px">本地路径：<code>app/docs/assets/cover-landscape.png</code>（竖版另有 <code>cover-portrait.png</code>）</p>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">2</div><div class="label">标题</div></div>
+    <div class="row">
+      <div class="field mono" id="f-title">老将 · Laojiang</div>
+      <button onclick="copy('f-title', this)">复制</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">3</div><div class="label">副标题</div></div>
+    <div class="row">
+      <div class="field" id="f-sub">给家里的老将，一个干净的棋盘</div>
+      <button onclick="copy('f-sub', this)">复制</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">4</div><div class="label">描述</div></div>
+    <p class="hint">限 400 字以内，这段是 <span id="len">0</span> 字。</p>
+    <div class="row">
+      <div class="field" id="f-desc">无广告的中国象棋，为不太会用智能手机的长辈设计。
+
+起因很具体：我爸想下棋，我给他装了五个 App，每个都有开屏广告。有的要登录、要充会员，有的把棋盘缩到屏幕一角塞广告位。他后来不下了，所以我自己写了一个。
+
+三个设计支点：正文 19px、按钮 56px、零广告零注册零数据上传。术语全部翻成人话——不出现「深度/节点/评估分」，只说「这局你赢了」「这步要是走炮二平五就好了」。
+
+会记战绩、连赢三局自动升档、连输自动降档，下完给一张说人话的教练卡：先夸一步做对的，再讲一步最该改的，最后给一条建议。前 3 档引擎零下载、可离线；后 3 档接 Pikafish。
+
+开源，GPL-3.0。</div>
+      <button onclick="copy('f-desc', this)">复制</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">5</div><div class="label">主产物链接</div></div>
+    <p class="hint">优先填 WorkBuddy 托管的这个（平台原生，审核更稳）：</p>
+    <div class="row">
+      <div class="field mono" id="f-url1">https://xiangqi-elder.app.workbuddy.host/?sharecode=26PF7XBRIW</div>
+      <button onclick="copy('f-url1', this)">复制</button>
+    </div>
+    <p class="hint" style="margin-top:12px">备用（GitHub Pages，无 query 限制）：</p>
+    <div class="row">
+      <div class="field mono" id="f-url2">https://dong-jay.github.io/xiangqi-elder/</div>
+      <button onclick="copy('f-url2', this)">复制</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">6</div><div class="label">分类与类型</div></div>
+    <p class="hint">社区现有 8 个分类，这个应用建议选：</p>
+    <div class="field">
+<strong>分类</strong>：个人工作台（可选加「知识与学习」）
+<strong>作品类型（creationKind）</strong>：1
+<strong>封面模式</strong>：landscape
+<strong>语言</strong>：zh
+    </div>
+    <p class="hint">依据：社区里同类娱乐/工具型作品（如「地球Online（大学版）」「家庭聚会亲子游戏工作台」）都挂在「个人工作台」下，kind 为 1。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">7</div><div class="label">英文版（有语言字段才填）</div></div>
+    <div class="row">
+      <div class="field" id="f-en-title">Laojiang · 老将</div>
+      <button onclick="copy('f-en-title', this)">复制</button>
+    </div>
+    <p class="hint" style="margin-top:12px">Subtitle：</p>
+    <div class="row">
+      <div class="field" id="f-en-sub">A clean chessboard for the veteran of the family</div>
+      <button onclick="copy('f-en-sub', this)">复制</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><div class="num">8</div><div class="label">提交</div></div>
+    <p class="hint">
+      打开 WorkBuddy 灵感社区 → 发布作品 → 按上面 1–7 填 → 提交。提交后状态为「待审」，通过后其他用户可见。
+    </p>
+    <p class="hint links">
+      在线试玩：<a href="https://dong-jay.github.io/xiangqi-elder/" target="_blank">dong-jay.github.io/xiangqi-elder</a><br>
+      源码仓库：<a href="https://github.com/Dong-JAY/xiangqi-elder" target="_blank">github.com/Dong-JAY/xiangqi-elder</a>
+    </p>
+  </div>
+
+  <p class="foot">若审核要求补充材料（真机截图／说明文档），把它告诉我，我继续补。</p>
+</div>
+
+<script>
+function copy(id, btn) {
+  var el = document.getElementById(id);
+  var text = el.innerText;
+  function done() {
+    var old = btn.innerText;
+    btn.innerText = '已复制';
+    btn.classList.add('done');
+    setTimeout(function () { btn.innerText = old; btn.classList.remove('done'); }, 1500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function () { fallback(text, done); });
+  } else {
+    fallback(text, done);
+  }
+}
+function fallback(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('复制失败，请手动选中文本'); }
+  document.body.removeChild(ta);
+}
+document.getElementById('len').textContent =
+  document.getElementById('f-desc').innerText.replace(/\s/g, '').length;
+</script>
+</body>
+</html>

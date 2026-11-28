@@ -13,7 +13,7 @@ An ad-free Xiangqi (Chinese Chess) app designed for people who are not good with
 Big text, big buttons, plain language. It never says "depth 18 / 2.3M nodes / eval -0.35".
 It says "You won this one" and "If you'd moved the cannon to the fifth file, you'd have kept your horse".
 
-| 19px | 56px | 0 |
+| 20px | 60px | 0 |
 |:---:|:---:|:---:|
 | body text<br><sub>most apps use 14px</sub> | button height<br><sub>thumb-friendly</sub> | ads · sign-ups · data uploads<br><sub>three zeros</sub> |
 
@@ -40,8 +40,8 @@ him which move to reconsider — in words he actually understands.
 | | Typical Xiangqi app | Laojiang |
 |---|---|---|
 | Colour | dark "tech" theme | light, high contrast |
-| Text size | desktop-oriented | body text ≥ 19px |
-| Buttons | small icons | touch targets ≥ 56px tall |
+| Text size | desktop-oriented | body text 20px |
+| Buttons | small icons | touch targets ≥ 60px tall |
 | Layout | landscape + side panel full of engine stats | portrait, single column, stats folded away |
 | Vocabulary | depth / nodes / NPS / eval | plain words only |
 | Move notation | `h2e2` | `炮二平五` (Chinese notation) |
@@ -85,7 +85,7 @@ native app and **works offline** with the first three difficulty levels.
 
 | Level | Engine | First load |
 |---|---|---|
-| 1 Beginner | Wukong (pure JS, 57KB, MIT) | **0 bytes** |
+| 1 Beginner | Wukong (pure JS, 58KB, MIT) | **0 bytes** |
 | 2 Easy | same | 0 bytes |
 | 3 Intermediate | same | 0 bytes |
 | 4 Advanced | Pikafish WASM + NNUE (GPL-3.0) | 49 MB |

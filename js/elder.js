@@ -389,6 +389,82 @@
     Elder.setStatus('成绩已导出，可以发到微信收藏存起来');
   };
 
+  /**
+   * 阿拉伯数字转中文（1~99）。
+   * 长辈读「三个月前」比读「3 个月前」顺，而且中文数字混在句子里没有空格断层。
+   */
+  function cnNum(n) {
+    var d = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    if (n < 10) return d[n];
+    if (n < 20) return '十' + (n % 10 ? d[n % 10] : '');
+    if (n < 100) {
+      var t = Math.floor(n / 10), o = n % 10;
+      return d[t] + '十' + (o ? d[o] : '');
+    }
+    return String(n);
+  }
+
+  /**
+   * 把「多久以前」说成人话。
+   * 不能直接写「三个月前的你」—— 记录可能只有两天，那是撒谎。
+   */
+  function describePast(ts) {
+    if (!ts) return '以前';
+    var diff = Date.now() - ts;
+    var DAY = 24 * 60 * 60 * 1000;
+    if (diff < DAY) return '今天早些时候';
+    var days = Math.floor(diff / DAY);
+    if (days < 30) return cnNum(days) + '天前';
+    var months = Math.floor(days / 30);
+    if (months < 12) return cnNum(months) + '个月前';
+    return cnNum(Math.floor(months / 12)) + '年前';
+  }
+
+  /**
+   * 「挑战过去的自己」：用最早那一局的难度档位与执子方，开一局新棋。
+   *
+   * 为什么取「时间最靠前」而不是「上一局」：这个功能的价值在对比，
+   * 必须是真正的"过去的我"。拿上一局来比，赢了也没有"我变强了"的感觉。
+   *
+   * 同时必须**明说是多久以前、第几档**——否则他不知道自己在跟谁下，
+   * 赢了个第 1 档还以为自己进步了。
+   *
+   * @param {function} onStart 确认有旧棋局、即将开局时的回调（用来收起菜单面板）
+   * @returns {Promise<{level:number, side:string, time:number}|null>}
+   */
+  Elder.startPastSelf = function (onStart) {
+    return Elder.listGames().then(function (list) {
+      if (!list || !list.length) {
+        Elder.setStatus('还没有可以挑战的旧棋局，先下一局吧');
+        return null;
+      }
+      // listGames() 已按时间倒序（最新在前），所以末尾是最早的一局
+      var oldest = list[list.length - 1];
+      var level = oldest.level || 3;
+      var side = oldest.side === 'b' ? 'b' : 'r';
+      var when = describePast(oldest.time);
+
+      if (typeof onStart === 'function') onStart();
+      if (global.onGameStart) global.onGameStart('pve', side, level);
+
+      /*
+       * 这句话必须延后一拍再说。
+       * 开局流程会立刻把状态条改成「正在准备引擎…」「轮到…走子」，
+       * 同步调用会被当场覆盖 —— 实测过：点完按钮状态条只剩「轮到黑方走子。」，
+       * 用户根本不知道自己是在跟哪个水平的自己下，这个功能就白做了。
+       * 也不设 autoHide：让它一直挂着，直到引擎走出第一步才被替换。
+       */
+      setTimeout(function () {
+        Elder.setStatus('在跟' + when + '的你下（第 ' + level + ' 档）');
+      }, 900);
+
+      return { level: level, side: side, time: oldest.time };
+    }).catch(function () {
+      Elder.setStatus('旧棋局读取失败，先来一局新的吧');
+      return null;
+    });
+  };
+
   // -------------------------------------------------------------------------
   // 7. 首屏按钮接线
   // -------------------------------------------------------------------------
@@ -441,8 +517,9 @@
       Elder.setStatus('你和家里人轮流下');
     });
     if (pastBtn) pastBtn.addEventListener('click', function () {
-      if (global.elderStartPastSelf) global.elderStartPastSelf();
-      else Elder.setStatus('还没有可以挑战的旧棋局');
+      // 收起菜单面板放在确认有旧棋局之后 —— 否则没记录时面板已消失、
+      // 只剩一行状态字，用户会以为按钮坏了。
+      Elder.startPastSelf(hidePanel);
     });
     if (scoresBtn) scoresBtn.addEventListener('click', function () {
       Elder.renderScores();

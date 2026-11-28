@@ -275,6 +275,62 @@ async function main() {
      'SW 升级后自动刷新一次，恢复跨源隔离');
 
   // ---------------------------------------------------------------------
+  section('9. 挑战过去的自己（复用过去的档位）');
+  // ---------------------------------------------------------------------
+  /*
+   * 曾经的真实缺陷：首屏「挑战过去的自己」是卖点按钮，但点击回调里引用的
+   * `global.elderStartPastSelf` 全局从未定义，所以任何情况下都只显示
+   * 「还没有可以挑战的旧棋局」—— 有历史棋局也一样。点了没反应，属于死按钮。
+   */
+  ok(typeof E.startPastSelf === 'function',
+     '「挑战过去的自己」已实现（此前是死按钮）');
+  var elderSrc = readFile('js/elder.js');
+  ok(elderSrc.indexOf('global.elderStartPastSelf') < 0,
+     '按钮不再依赖未定义的 elderStartPastSelf 全局');
+
+  // 无历史记录时（jsdom 没有 IndexedDB，listGames 会回落为空数组）
+  $('elder-pastbtn').click();
+  await new Promise((r) => setTimeout(r, 60));
+  ok(/还没有可以挑战的旧棋局/.test($('elder-status').textContent),
+     '没有旧棋局时给出人话提示，而不是静默无反应');
+  ok(!$('board-options').classList.contains('hide'),
+     '没有旧棋局时不收起菜单（否则用户以为界面坏了）');
+
+  // 有历史记录时：桩掉 listGames，验证取的是「最早那一局」
+  var started = [];
+  var realOnGameStart = window.onGameStart;
+  window.onGameStart = function (mode, side, level) {
+    started.push({ mode: mode, side: side, level: level });
+  };
+  var origListGames = E.listGames;
+  E.listGames = function () {
+    return Promise.resolve([
+      // 最新的在前（与真实 listGames 的排序一致）
+      { time: Date.now() - 2 * 86400000, level: 5, side: 'r', result: 'win' },
+      { time: Date.now() - 90 * 86400000, level: 2, side: 'b', result: 'loss' }
+    ]);
+  };
+
+  $('elder-pastbtn').click();
+  await new Promise((r) => setTimeout(r, 60));
+  ok(started.length === 1, '有旧棋局时会真的开局');
+  ok(started[0] && started[0].mode === 'pve', '走人机对战');
+  ok(started[0] && started[0].level === 2,
+     '用最早那一局的档位（2 档），不是最近一局（5 档）');
+  ok(started[0] && started[0].side === 'b', '沿用当时的执子方（黑方）');
+  ok($('board-options').classList.contains('hide'),
+     '确认开局后才收起菜单面板');
+  // 提示语延后 900ms 才出（开局流程会立刻覆盖状态条），这里等足
+  await new Promise((r) => setTimeout(r, 1100));
+  ok(/三个月前/.test($('elder-status').textContent),
+     '明确告知是多久以前的水平（不能谎称三个月）');
+  ok(/第 2 档/.test($('elder-status').textContent),
+     '提示语带上档位，否则赢了第 2 档会误以为自己进步了');
+
+  E.listGames = origListGames;
+  window.onGameStart = realOnGameStart;
+
+  // ---------------------------------------------------------------------
   console.log('\n' + '='.repeat(52));
   console.log('结果：' + pass + ' 通过 / ' + fail + ' 失败');
   if (failures.length) {
